@@ -13,6 +13,7 @@ import { Notification } from "~/features/Notification";
 import { Home } from "~/features/Home";
 import { PR } from "~/features/PR";
 import UserInfo from "~/features/UserInfo/screens/UserInfo";
+import { BottomTabNavigator } from "./BottomTabNavigator";
 
 const Drawer = createDrawerNavigator<AppNavigatorParamList>();
 
@@ -38,6 +39,14 @@ const AppNavigator = () => {
         <DrawerContent {...props} />
       )}
     >
+      {/* <Drawer.Screen
+        name={ROUTE_KEYS.BottomTabNavigator}
+        component={BottomTabNavigator}
+        options={{
+          drawerItemStyle: { display: "none" },
+        }}
+      /> */}
+
       <Drawer.Screen
         name={ROUTE_KEYS.Home}
         component={Home}

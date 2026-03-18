@@ -1,7 +1,7 @@
 import { Icon } from "@rneui/base";
 import React, { useCallback } from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { Block, Header, Linear, Row, Text } from "~/common";
+import { Block, Header, InfoRow, Linear, Row, Text } from "~/common";
 import { Container, Scroll, Status } from "~/components";
 import { useAuth } from "~/hooks/useAuth";
 import { useModal } from "~/hooks/useModal";
@@ -41,24 +41,33 @@ const UserInfo = (props: Props) => {
   return (
     <Linear>
       <Container>
-        <Header title="Thông tin cá nhân" showSearch={false} />
+        <Header
+          title="Thông tin cá nhân"
+          showBack={true}
+          showNotification={false}
+        />
 
         <Scroll
           gap={10}
           contentContainerStyle={{
             flexGrow: 1,
-            margin: 10,
+            paddingHorizontal: 10,
           }}
         >
           <Block
             title="Thông tin cá nhân"
             icon={{ name: "person-outline", size: 20 }}
             style={{
-              height: 200,
-              // flexGrow: 1,
+              padding: 16,
             }}
           >
-            {null}
+            <InfoRow label="Tài khoản" value={user?.name} />
+            <InfoRow label="Vai trò" value={""} />
+            <InfoRow label="Họ tên" value={user?.name} />
+            <InfoRow label="Email" value={""} />
+            <InfoRow label="Số điện thoại" value={""} />
+            <InfoRow label="Phòng ban" value={""} />
+            <InfoRow label="Chức vụ" value={""} />
           </Block>
 
           <View style={styles.actionSection}>

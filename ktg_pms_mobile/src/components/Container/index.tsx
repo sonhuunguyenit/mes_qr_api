@@ -26,8 +26,8 @@ export const Container = ({
       style={[
         {
           flex: 1,
-          // paddingTop: disableInsetTop ? 0 : insets.top,
-          // paddingBottom: disableInsetBottom ? 0 : insets.bottom,
+          paddingTop: disableInsetTop ? 0 : insets.top,
+          paddingBottom: disableInsetBottom ? 0 : insets.bottom,
           backgroundColor: backgroundScreen,
         },
         style,

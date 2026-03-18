@@ -1,8 +1,8 @@
-import { View, RefreshControl } from "react-native";
+import { Icon } from "@rneui/base";
 import React from "react";
+import { RefreshControl, View } from "react-native";
 import { Block, Header, Linear, Spacer, Text } from "~/common";
 import { Container, Scroll } from "~/components";
-import { Icon } from "@rneui/base";
 import { useTheme } from "~/hooks/useTheme";
 import { useNotificationList } from "../hooks/useNotificationList";
 
@@ -18,20 +18,18 @@ const Notification = () => {
 
   return (
     <Linear style={{ flex: 1 }}>
-      <Container style={{}}>
-        <Header title="Thông báo" showBack showSearch={false} />
+      <Container>
+        <Header title="Thông tin cá nhân" showBack={true} />
 
-        <Block title="Thông báo gần đây">
+        <Block
+          title="Thông báo gần đây"
+          style={{ marginHorizontal: 5, marginTop: 10 }}
+        >
           <Scroll
             style={{ flex: 1 }}
-            contentContainerStyle={{
-              paddingHorizontal: 5,
-              paddingTop: 10,
-            }}
             refreshControl={
               <RefreshControl refreshing={isLoading} onRefresh={refetch} />
             }
-            showsVerticalScrollIndicator={false}
           >
             <View
               style={{

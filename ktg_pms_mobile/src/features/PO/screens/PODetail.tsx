@@ -105,7 +105,7 @@ const PODetail = ({ route }: Props) => {
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
-        <Container style={styles.container}>
+        <Container>
           <SegmentedTab
             tabs={[
               { label: "Thông tin chung", value: 0 },

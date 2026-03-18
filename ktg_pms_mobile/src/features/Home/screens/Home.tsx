@@ -1,16 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Block,
-  Collapse,
-  Container,
-  Icon,
-  Linear,
-  Row,
-  Spacer,
-  Text,
-} from "~/common";
+import { Container, Icon, Linear, Row, Spacer, Text } from "~/common";
 import { useHome } from "../hooks/useHome";
 import { Module } from "../types";
 import { useTheme } from "~/hooks/useTheme";
@@ -19,26 +10,34 @@ import { CollapseMenu } from "../components/CollapseMenu";
 import { HomeHeader } from "../components/HomeHeader";
 import { HomeSkeleton } from "../components/HomeSkeleton";
 import { MenuBlock } from "../components/MenuGrid";
+import StringHelper from "~/utils/string";
 
 const Home = () => {
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState("");
   const { modules, totalApproveCount, isLoading, refetch } = useHome();
-  const [linearIndex, setLinearIndex] = useState(0);
 
   const filteredModules = useMemo(() => {
     if (!search) return modules;
-    const searchLow = search.toLowerCase(); // Simple search for now, use util if needed
+    const searchNorm = StringHelper.removeVietnameseTones(search.toLowerCase());
 
     return modules
       .map((mod) => {
+        const modTitleNorm = StringHelper.removeVietnameseTones(
+          mod.title.toLowerCase(),
+        );
+
         if (mod.isGroup) {
-          const filteredItems = mod.items?.filter((item) =>
-            item.title.toLowerCase().includes(searchLow),
-          );
+          const filteredItems = mod.items?.filter((item) => {
+            const itemTitleNorm = StringHelper.removeVietnameseTones(
+              item.title.toLowerCase(),
+            );
+            return itemTitleNorm.includes(searchNorm);
+          });
+
           if (
-            mod.title.toLowerCase().includes(searchLow) ||
+            modTitleNorm.includes(searchNorm) ||
             (filteredItems && filteredItems.length > 0)
           ) {
             return {
@@ -49,7 +48,8 @@ const Home = () => {
           }
           return null;
         }
-        return mod.title.toLowerCase().includes(searchLow) ? mod : null;
+
+        return modTitleNorm.includes(searchNorm) ? mod : null;
       })
       .filter((m) => m !== null) as Module[];
   }, [search, modules]);
@@ -95,7 +95,7 @@ const Home = () => {
         searchValue={search}
       />
 
-      <Container
+      <View
         style={{
           flex: 1,
           marginTop: insets.top + 110,
@@ -118,7 +118,11 @@ const Home = () => {
             <>
               {topModules.length > 0 && (
                 <View style={styles.topSection}>
-                  <Row gap={8} align="center" style={styles.sectionHeader}>
+                  <Row
+                    gap={8}
+                    align="center"
+                    style={[styles.sectionHeader, { paddingBottom: 0 }]}
+                  >
                     <Icon
                       name="zap"
                       type="feather"
@@ -134,7 +138,7 @@ const Home = () => {
                       Duyệt nhanh
                     </Text>
                   </Row>
-                  <View style={{ paddingTop: 4 }}>
+                  <View style={{ paddingTop: 16 }}>
                     <ScrollView
                       horizontal
                       showsHorizontalScrollIndicator={false}
@@ -185,7 +189,7 @@ const Home = () => {
             </>
           )}
         </ScrollView>
-      </Container>
+      </View>
     </Linear>
   );
 };

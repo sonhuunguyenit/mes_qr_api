@@ -150,7 +150,7 @@ const PRDetail = ({ route }: Props) => {
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
-        <Container style={styles.container}>
+        <Container>
           <Header title="Chi tiết PR" showBack showSearch={false} />
 
           <SegmentedTab

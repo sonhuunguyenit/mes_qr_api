@@ -102,10 +102,11 @@ const PRScreen = () => {
 
   return (
     <Linear>
-      <Container style={[styles.container, { marginTop: insets.top }]}>
+      <Container>
         <Header
           title="Duyệt PR"
-          showBack
+          showBack={true}
+          showSearch={true}
           searchMode="button"
           onFilter={openFilter}
           hasFilter={hasFilter}

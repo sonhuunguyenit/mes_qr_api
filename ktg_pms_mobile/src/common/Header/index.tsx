@@ -62,11 +62,11 @@ const Header = ({
   centerContent,
 
   rightSide,
-  showNotification = true,
+  showNotification = false,
   hasNotification = false,
   onNotification,
 
-  showSearch = true,
+  showSearch = false,
   searchMode = "button",
   onInput,
   hasFilter,

@@ -1,10 +1,17 @@
 import React from "react";
-import { StyleSheet, View, Image, TouchableOpacity } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Image,
+  TouchableOpacity,
+  TextInput,
+} from "react-native";
 import { Icon } from "@rneui/base";
-import { Spacer, Text } from "~/common";
+import { Row, Spacer, Text } from "~/common";
 import { useTheme } from "~/hooks/useTheme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Images } from "~/assets";
+import { goNotification, goUserInfo } from "~/utils/navigate";
 
 interface HomeHeaderProps {
   totalApproveCount?: number;
@@ -26,7 +33,8 @@ export const HomeHeader = ({
         style={[
           styles.headerBg,
           {
-            backgroundColor: "#fff394",
+            // backgroundColor: "#fff394",
+            backgroundColor: colors.white,
             paddingTop: insets.top + spacing.xs,
             paddingBottom: 28,
           },
@@ -49,36 +57,54 @@ export const HomeHeader = ({
             />
           </View>
 
-          {/* Notification Account */}
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => {}}
-            style={styles.notifContainer}
-          >
-            <Icon
-              name="notifications-outline"
-              type="ionicon"
-              size={24}
-              color={colors.title}
-            />
-            {totalApproveCount > 0 && (
-              <View style={[styles.badge, { borderColor: colors.primary }]} />
-            )}
-          </TouchableOpacity>
+          <Row gap={10}>
+            {/* Notification Account */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={goNotification}
+              style={styles.notifContainer}
+            >
+              <Icon
+                name="notifications-outline"
+                type="ionicon"
+                size={26}
+                color={colors.title}
+              />
+              {totalApproveCount > 0 && (
+                <View style={[styles.badge, { borderColor: colors.white }]} />
+              )}
+            </TouchableOpacity>
+
+            {/* User Info */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={goUserInfo}
+              style={styles.notifContainer}
+            >
+              <Icon name="user" type="feather" size={25} color={colors.title} />
+            </TouchableOpacity>
+          </Row>
         </View>
       </View>
 
       {/* Floating Search Bar */}
       <View style={styles.searchBarWrapper}>
-        <TouchableOpacity
-          activeOpacity={0.9}
-          style={[styles.searchBar, { backgroundColor: colors.white }]}
-        >
+        <View style={[styles.searchBar, { backgroundColor: colors.white }]}>
           <Icon type="feather" name="search" size={18} color="#94A3B8" />
           <Spacer horizontal size={12} />
-          <Text style={{ color: "#94A3B8", fontSize: 13, flex: 1 }}>
-            {searchValue || "Tìm kiếm thông báo duyệt ..."}
-          </Text>
+          <TextInput
+            placeholder="Tìm kiếm thông báo duyệt..."
+            placeholderTextColor="#94A3B8"
+            value={searchValue}
+            onChangeText={onSearch}
+            style={{
+              color: colors.title,
+              fontSize: 14,
+              flex: 1,
+              height: "100%",
+              paddingVertical: 0,
+            }}
+          />
           <View style={styles.filterIcon}>
             <Icon
               type="feather"
@@ -87,7 +113,7 @@ export const HomeHeader = ({
               color={colors.active}
             />
           </View>
-        </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -118,7 +144,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   titleText: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "800",
     letterSpacing: -0.2,
   },

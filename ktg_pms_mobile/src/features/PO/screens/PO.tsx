@@ -119,10 +119,11 @@ const PO = ({ navigation }: Props) => {
 
   return (
     <Linear>
-      <Container style={[styles.container, { marginTop: insets.top }]}>
+      <Container>
         <Header
           title={"Duyệt PO"}
-          showBack
+          showBack={true}
+          showSearch={true}
           searchMode="button"
           onFilter={openFilter}
           hasFilter={hasFilter}

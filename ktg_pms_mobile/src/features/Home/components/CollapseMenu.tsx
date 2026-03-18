@@ -41,11 +41,11 @@ export const CollapseMenu = ({ mod, onPress }: CollapseMenuProps) => {
         collapsible
         expanded={mod.forceExpand}
         style={{ paddingHorizontal: 10, paddingVertical: 16 }}
-        headerStyle={{ paddingBottom: 12 }}
+        headerStyle={{ paddingBottom: 0 }}
         noHeaderPadding
         noContentPadding
       >
-        <View style={{ paddingTop: 4 }}>
+        <View style={{ paddingTop: 16 }}>
           <MenuGrid marginTop={0}>
             {mod.items?.map((item, index) => (
               <View key={index} onTouchEnd={() => onPress(mod.id, item.type)}>

@@ -408,7 +408,7 @@ const styles = StyleSheet.create({
     left: -SCREEN_WIDTH * 0.2,
     width: SCREEN_WIDTH * 1.5,
     height: SCREEN_HEIGHT * 0.38,
-    backgroundColor: colors.primary,
+    backgroundColor: "#FFF59D", // #FFF9C4
   },
   bgBottomShape: {
     position: "absolute",
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     left: -SCREEN_WIDTH * 0.2,
     width: SCREEN_WIDTH * 1.5,
     height: SCREEN_HEIGHT * 0.35,
-    backgroundColor: "#2D2E35",
+    backgroundColor: "#45464E", // #37474F
   },
 });
 

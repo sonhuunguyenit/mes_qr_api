@@ -10,6 +10,7 @@ import { PRItemData } from "../services/pr/pr.type";
 
 // App navigator
 export type AppNavigatorParamList = {
+  // [ROUTE_KEYS.BottomTabNavigator]: undefined;
   [ROUTE_KEYS.Home]: undefined;
   [ROUTE_KEYS.UserInfo]: undefined;
   [ROUTE_KEYS.PR]: {
@@ -34,4 +35,9 @@ export type AppNavigatorParamList = {
 export type RootNavigatorParamList = {
   AuthNavigator: NavigatorScreenParams<AuthNavigatorParamList>;
   AppNavigator: NavigatorScreenParams<AppNavigatorParamList>;
+};
+
+export type BottomTabNavigatorParamList = {
+  [ROUTE_KEYS.Home]: undefined;
+  [ROUTE_KEYS.UserInfo]: undefined;
 };
