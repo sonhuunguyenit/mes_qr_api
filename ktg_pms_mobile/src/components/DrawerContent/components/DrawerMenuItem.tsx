@@ -1,0 +1,61 @@
+import { Row } from "~/common";
+import { colors } from "~/constants/colors";
+import { Icon, Text } from "@rneui/themed";
+import React from "react";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
+
+interface DrawerMenuItemProps {
+  title: string;
+  icon: string;
+  color: string;
+  bg: string;
+  onPress: () => void;
+  showDivider?: boolean;
+}
+
+export const DrawerMenuItem = ({
+  title,
+  icon,
+  color,
+  bg,
+  onPress,
+  showDivider,
+}: DrawerMenuItemProps) => {
+  return (
+    <View>
+      <TouchableOpacity style={styles.menuItem} onPress={onPress}>
+        <Row gap={12}>
+          <View style={[styles.miniIconBox, { backgroundColor: bg }]}>
+            <Icon name={icon} type="material" color={color} size={18} />
+          </View>
+          <Text style={styles.menuItemText}>{title}</Text>
+        </Row>
+      </TouchableOpacity>
+      {showDivider && <View style={styles.menuDivider} />}
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  menuItem: {
+    paddingVertical: 12,
+    paddingLeft: 25,
+  },
+  miniIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  menuItemText: {
+    fontSize: 14,
+    color: "#475569",
+    fontWeight: "500",
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginLeft: 60,
+  },
+});

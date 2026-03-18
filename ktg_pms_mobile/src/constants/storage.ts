@@ -1,0 +1,25 @@
+export const STORAGE_KEYS = {
+  ACCESS_TOKEN: "ACCESS_TOKEN",
+  REFRESH_TOKEN: "REFRESH_TOKEN",
+  USER_DATA: "USER_DATA",
+  APP_LANGUAGE: "vi",
+  APP_THEME: "light",
+  ONBOARDING: "true",
+  FCM_TOKEN: "FCM_TOKEN",
+  SAVED_USERNAME: "SAVED_USERNAME",
+} as STORAGE_KEYS_TYPE;
+
+export type STORAGE_KEYS_TYPE = {
+  ACCESS_TOKEN: string;
+  REFRESH_TOKEN: string;
+  USER_DATA: string;
+  APP_LANGUAGE: APP_LANGUAGE_TYPE;
+  APP_THEME: APP_THEME_TYPE;
+  ONBOARDING: string;
+  FCM_TOKEN: string;
+  SAVED_USERNAME: string;
+};
+
+export type APP_THEME_TYPE = "light" | "dark";
+
+export type APP_LANGUAGE_TYPE = "vi" | "en";

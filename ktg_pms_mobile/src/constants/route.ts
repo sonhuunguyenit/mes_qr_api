@@ -1,0 +1,16 @@
+export const ROUTE_KEYS = {
+  RootNavigator: "RootNavigator",
+  AuthNavigator: "AuthNavigator",
+  Login: "Login",
+  AppNavigator: "AppNavigator",
+  BottomTabNavigator: "BottomTabNavigator",
+  Home: "Home",
+  UserInfo: "UserInfo",
+  Notification: "Notification",
+  Supplier: "Supplier",
+  PR: "PR",
+  PRDetail: "PRDetail",
+  PO: "PO",
+  PODetail: "PODetail",
+  Preview: "Preview",
+} as const;
