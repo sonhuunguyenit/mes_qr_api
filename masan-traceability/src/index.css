@@ -1,0 +1,106 @@
+/* Custom solid tags style */
+.ant-tag {
+  color: #ffffff !important;
+  font-weight: 500 !important;
+  font-size: 12px !important;
+  border: none !important;
+  padding: 2px 10px !important;
+  border-radius: 50px !important;
+  line-height: normal !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* Global Table Font adjustments */
+.ant-table, .ant-table-container, .ant-table-cell, .ant-table-tbody > tr > td {
+  font-size: 13.5px !important;
+}
+.ant-table-thead > tr > th, .ant-table-thead > tr > th .ant-table-column-title {
+  font-size: 13.5px !important;
+  font-weight: 600 !important;
+}
+.ant-table-tbody > tr > td strong {
+  font-size: 13.5px !important;
+}
+
+/* Ant design color mappings overrides to make them solid and dark */
+.ant-tag-success, .ant-tag-status-success, .ant-tag-green {
+  background-color: #15803d !important; /* Premium dark forest green */
+  color: #ffffff !important;
+}
+.ant-tag-warning, .ant-tag-status-warning, .ant-tag-orange, .ant-tag-volcano {
+  background-color: #c2410c !important; /* Premium deep burnt orange */
+  color: #ffffff !important;
+}
+.ant-tag-error, .ant-tag-status-error, .ant-tag-red {
+  background-color: #b91c1c !important; /* Premium deep crimson red */
+  color: #ffffff !important;
+}
+.ant-tag-blue {
+  background-color: #1d4ed8 !important; /* Premium royal blue */
+  color: #ffffff !important;
+}
+.ant-tag-cyan {
+  background-color: #0e7490 !important; /* Premium cyan */
+  color: #ffffff !important;
+}
+.ant-tag-purple {
+  background-color: #6d28d9 !important; /* Premium purple */
+  color: #ffffff !important;
+}
+.ant-tag-magenta, .ant-tag-pink {
+  background-color: #be185d !important; /* Premium magenta/pink */
+  color: #ffffff !important;
+}
+.ant-tag-gold, .ant-tag-yellow {
+  background-color: #b45309 !important; /* Premium gold / dark amber */
+  color: #ffffff !important;
+}
+.ant-tag-lime {
+  background-color: #4d7c0f !important; /* Premium lime */
+  color: #ffffff !important;
+}
+.ant-tag-geekblue {
+  background-color: #4338ca !important; /* Premium geekblue / dark indigo */
+  color: #ffffff !important;
+}
+.ant-tag-default, .ant-tag-status-default {
+  background-color: #4b5563 !important; /* Premium slate gray */
+  color: #ffffff !important;
+}
+.ant-tag-processing, .ant-tag-status-processing {
+  background-color: #1d4ed8 !important; /* Royal blue */
+  color: #ffffff !important;
+  border: none !important;
+}
+
+/* Table headers inside modals or drawers should be gray, not blue */
+.ant-modal .ant-table-thead > tr > th,
+.ant-drawer .ant-table-thead > tr > th,
+.ant-modal .app-custom-table-brand .ant-table-thead > tr > th,
+.ant-drawer .app-custom-table-brand .ant-table-thead > tr > th {
+  background-color: #f5f5f5 !important;
+  color: #262626 !important;
+}
+
+.ant-modal .ant-table-thead > tr > th .ant-table-column-title,
+.ant-drawer .ant-table-thead > tr > th .ant-table-column-title,
+.ant-modal .app-custom-table-brand .ant-table-thead > tr > th .ant-table-column-title,
+.ant-drawer .app-custom-table-brand .ant-table-thead > tr > th .ant-table-column-title {
+  color: #262626 !important;
+}
+
+.ant-modal .ant-table-thead > tr > th .ant-table-column-sorter,
+.ant-drawer .ant-table-thead > tr > th .ant-table-column-sorter,
+.ant-modal .app-custom-table-brand .ant-table-thead > tr > th .ant-table-column-sorter,
+.ant-drawer .app-custom-table-brand .ant-table-thead > tr > th .ant-table-column-sorter {
+  color: #262626 !important;
+}
+
+.ant-modal .ant-table-thead > tr > th .ant-table-filter-trigger,
+.ant-drawer .ant-table-thead > tr > th .ant-table-filter-trigger,
+.ant-modal .app-custom-table-brand .ant-table-thead > tr > th .ant-table-filter-trigger,
+.ant-drawer .app-custom-table-brand .ant-table-thead > tr > th .ant-table-filter-trigger {
+  color: #262626 !important;
+}
+

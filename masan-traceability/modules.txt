@@ -1,0 +1,62 @@
+1	Quản lý bộ hồ sơ tự công bố sản phẩm (HSCB)
+2	Quản lý thông tin tiêu chuẩn NVL, Bao Bì, BTP, Thành phẩm (TCCS/Spec)
+3	Quản lý chứng từ NCC (COA, Specification, hồ sơ công bố...)
+4	Quản lý thông tin NCC và NSX của các item NVL, Bao bì
+5	Quản lý BOM — HSCB & SPEC áp dụng cho từng item trong BOM
+6	Truy xuất nguồn gốc từ lô thành phẩm
+7	Quản lý thông tin sở hữu trí tuệ (SHTT) của thành phẩm
+8	Quản lý thông tin Barcode theo item (nhãn, bao bì, thùng...)
+9	Truy xuất nguồn gốc từ lô NVL (2 chiều: xuôi + ngược)
+10	Quản lý thông tin và quy trình Recall thành phẩm
+
+
+Tham khảo: 
+Module 1 — Quản lý bộ hồ sơ tự công bố sản phẩm
+
+Mục đích: Số hóa việc quản lý dữ liệu bộ hồ sơ tự công bố sản phẩm
+Yêu cầu tính năng/vận hành: Theo phương án 1: cho phép xem/sửa/duyệt theo phân quyền. Dữ liệu của file upload lên hệ thống: chỉ đọc những thông tin cần thiết, các bộ phận chốt thông tin nào được lưu trữ. Chốt phương án tạo dữ liệu ban đầu → APE thực hiện việc upload dữ liệu này.
+
+Module 2 — Quản lý thông tin tiêu chuẩn của NVL, Bao Bì, BTP, Thành phẩm
+
+Mục đích: Quản lý thông tin SPEC của item trong 1 phiên bản BOM
+Yêu cầu tính năng/vận hành: Tích hợp thông tin BOM từ ERP, cho phép quản lý thông tin SPEC áp dụng cho từng item trong BOM. Giải pháp tự động → tránh overload. → Màn hình quản lý item trong BOM đang áp dụng SPEC nào.
+
+Module 3 — Quản lý thông tin chứng từ khác (COA, Specification…) của các NCC cho NVL, Bao bì
+
+Mục đích: Quản lý thông tin NCC, NSX gồm 2 nội dung: thông tin chung, thông tin hàng hóa
+Yêu cầu tính năng/vận hành: Cấu trúc folder lưu trữ toàn bộ giấy tờ của NCC trên hệ thống (COA, SPC, hồ sơ công bố...) và liên kết chặt chẽ với Item Code. Cho phép upload 1 file → lưu thành nhiều loại chứng từ khác nhau (chung 1 file). Người được phân quyền vào review/duyệt/reject. Cho phép NCC vào bổ sung chứng từ. Thêm cảnh báo: thiếu chứng từ, chứng từ hết hạn, gửi email NCC. Thêm chức năng: quản lý thông tin dị ứng/dinh dưỡng cho NCC upload theo item code.
+
+Module 4 — Quản lý thông tin NCC và NSX của các item NVL, Bao bì
+
+Mục đích: 1 item → thuộc NCC/NSX nào. Bổ sung so với mục 3 cho các NCC không lên hệ thống
+Yêu cầu tính năng/vận hành: Kế thừa thông tin mục 3, bổ sung tính năng cho phép tạo mới thêm thông tin item nào - NCC nào.
+
+Module 5 — Quản lý bán thành phẩm, thành phẩm, NVL, bao bì của từng BOM là dùng thông tin tự công bố nào
+
+Mục đích: Quản lý thông tin HSCB của các item code trong 1 phiên bản BOM
+Yêu cầu tính năng/vận hành: Tích hợp thông tin BOM từ ERP, cho phép quản lý thông tin HSCB nào áp dụng cho từng item trong BOM. Giải pháp tự động → tránh overload. → Màn hình quản lý item/BOM đang áp dụng HSCB nào.
+
+Module 6 — Quy trình thực hiện truy xuất nguồn gốc từ lô thành phẩm
+
+Mục đích: Màn hình truy xuất nguồn gốc từ lô thành phẩm
+Yêu cầu tính năng/vận hành: Thiết kế màn hình thể hiện đầy đủ thông tin chi tiết theo nhu cầu (cấu trúc ở cột D). Truy xuất xuôi: nhập item code thành phẩm → truy xuất ra các thông tin theo file excel/format từ phía Masan cung cấp. Truy xuất ngược từ NVL: tương tự, thống nhất 1 quy tắc thực hiện.
+
+Module 7 — Quản lý thông tin sở hữu trí tuệ của thành phẩm
+
+Mục đích: Số hóa việc liên kết Số đơn với Item thành phẩm, đồng bộ hóa thông tin truy xuất và thông tin SHTT giữa hai hệ thống
+Yêu cầu tính năng/vận hành: Trong bộ hồ sơ công bố (TN01) - file đính kèm có thông tin cho phép quản lý nhiều số đơn SHTT. BP R&D upload file - hệ thống tự động ghi nhận. Các thông tin cần hiển thị khi truy xuất chi tiết 1 số đơn SHTT: số đơn, tên nhãn hiệu, tên KDCN, chủ sở hữu, bản PDF văn bằng.
+
+Module 8 — Quản lý thông tin barcode theo item thành phẩm, nhãn, bao bì, thùng...
+
+Mục đích: Liên kết Barcode với TCCS và Item, thay thế hệ thống khai báo Mobile application, giảm việc double work
+Yêu cầu tính năng/vận hành: Liên kết dữ liệu với app mobile để lấy tất cả thông tin: barcode (nhãn, thùng,...)
+
+Module 9 — Quy trình thực hiện truy xuất thông tin master data mới cho từng lô NVL
+
+Mục đích: Cung cấp màn hình tra cứu, truy xuất thông tin
+Yêu cầu tính năng/vận hành: Thiết kế màn hình thể hiện đầy đủ thông tin chi tiết theo nhu cầu (cấu trúc ở cột D). Truy xuất xuôi: nhập item code thành phẩm → truy xuất ra các thông tin theo file excel/format từ phía Masan cung cấp. Truy xuất ngược từ NVL: tương tự, thống nhất 1 quy tắc thực hiện.
+
+Module 10 — Quản lý thông tin và quy trình recall thành phẩm
+
+Mục đích: Số hóa quy trình Recall
+Yêu cầu tính năng/vận hành: Option 2: tính năng nhập thông tin recall — thông tin cần nhập tham khảo sheet thông tin recall.
