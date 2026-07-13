@@ -15,10 +15,13 @@ const ENDPOINTS = {
   PAGINATION: "/pr/pagination",
   FILTER_OPTIONS: "/purchase-requisition/filter-options",
   APPROVE: "/pr/update_approved",
-  REJECT: "/pr/update_reject",
   EXTERNAL_MATERIAL_GROUP_FIND: "/external_material_group/find",
   PLANT_FIND: "/plant/find",
   PURCHASING_GROUP_FIND: "/purchasing_group/find",
+  PR_LIST_ITEM_CHECK_BUDGET: "/pr/find_list_pr_item_budget",
+  CHECK_BUDGET_ITEM: "/pr/check_budget_pr_item",
+  BUDGET_INFO: "/pr/check_budget_pr",
+  UPDATE_STATUS_RECHECK: "/pr/update_data_recheck_status",
 };
 
 export const prService = {
@@ -95,12 +98,6 @@ export const prService = {
     return response;
   },
 
-  getPRApproveList: async (
-    params: PRFilterParams,
-  ): Promise<AxiosResponse<ApiPaginationResponse<PRItemData>>> => {
-    return prService.getPRList(params);
-  },
-
   getFilterOptions: async (): Promise<
     AxiosResponse<PRFilterOptionsResponse>
   > => {
@@ -112,11 +109,6 @@ export const prService = {
     data: PRUpdateStatusRequest,
   ): Promise<AxiosResponse<any>> => {
     const response = await apiClient.post(ENDPOINTS.APPROVE, data);
-    return response;
-  },
-
-  rejectPR: async (data: PRActionRequest): Promise<AxiosResponse<any>> => {
-    const response = await apiClient.post(ENDPOINTS.REJECT, data);
     return response;
   },
 
@@ -152,6 +144,32 @@ export const prService = {
   },
   getPurchaseGroups: async (): Promise<AxiosResponse<PRFilterOption[]>> => {
     const response = await apiClient.post(ENDPOINTS.PURCHASING_GROUP_FIND, {});
+    return response;
+  },
+
+  getPRListItemCheckBudget: async (data: any): Promise<AxiosResponse<any>> => {
+    const response = await apiClient.post(
+      ENDPOINTS.PR_LIST_ITEM_CHECK_BUDGET,
+      data,
+    );
+    return response;
+  },
+
+  checkBudgetItem: async (data: any): Promise<AxiosResponse<any>> => {
+    const response = await apiClient.post(ENDPOINTS.CHECK_BUDGET_ITEM, data);
+    return response;
+  },
+
+  getBudgetInfo: async (data: any): Promise<AxiosResponse<any>> => {
+    const response = await apiClient.post(ENDPOINTS.BUDGET_INFO, data);
+    return response;
+  },
+
+  updateStatusRecheck: async (data: any): Promise<AxiosResponse<any>> => {
+    const response = await apiClient.post(
+      ENDPOINTS.UPDATE_STATUS_RECHECK,
+      data,
+    );
     return response;
   },
 };

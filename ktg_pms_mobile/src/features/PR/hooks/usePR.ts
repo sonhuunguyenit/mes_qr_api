@@ -57,7 +57,6 @@ export const usePRList = (filters: PRFilterParams) => {
     queryFn: ({ pageParam = 1 }) =>
       prService.getPRList({ ...filters, pageIndex: pageParam as number }),
     getNextPageParam: (lastPage: any, allPages) => {
-      const data = lastPage.data?.[0] || [];
       const total = lastPage.data?.[1] || 0;
       const currentCount = allPages.reduce(
         (acc, page) => acc + (page.data?.[0]?.length || 0),

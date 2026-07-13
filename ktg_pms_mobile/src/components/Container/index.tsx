@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
+import { useTheme } from "~/hooks/useTheme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type Props = {
@@ -14,21 +15,26 @@ type Props = {
 export const Container = ({
   children,
   style = {},
-  backgroundScreen = "transparent",
+  backgroundScreen,
   backgroundColor = "transparent",
-  disableInsetTop = false,
-  disableInsetBottom = false,
+  disableInsetTop = true,
+  disableInsetBottom = true,
 }: Props) => {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+
+  const finalBackgroundScreen = backgroundScreen || colors.background;
 
   return (
     <View
       style={[
         {
           flex: 1,
+          marginTop: 5,
           paddingTop: disableInsetTop ? 0 : insets.top,
           paddingBottom: disableInsetBottom ? 0 : insets.bottom,
-          backgroundColor: backgroundScreen,
+          // backgroundColor: finalBackgroundScreen,
+          paddingHorizontal: 5,
         },
         style,
       ]}

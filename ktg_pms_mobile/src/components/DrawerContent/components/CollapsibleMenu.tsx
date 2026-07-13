@@ -1,5 +1,4 @@
 import { Row } from "~/common";
-import { colors } from "~/constants/colors";
 import { Icon } from "@rneui/base";
 import { Text } from "@rneui/themed";
 import React, { useState } from "react";
@@ -10,6 +9,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { useTheme } from "~/hooks/useTheme";
 
 interface CollapsibleMenuProps {
   title: string;
@@ -22,14 +22,18 @@ interface CollapsibleMenuProps {
 
 export const CollapsibleMenu = ({
   title,
-  titleColor = colors.primary,
+  titleColor,
   icon,
-  iconBg = colors.primary + "15",
+  iconBg,
   children,
   defaultExpanded = false,
 }: CollapsibleMenuProps) => {
+  const { colors } = useTheme();
   const [expanded, setExpanded] = useState(defaultExpanded);
   const contentHeight = useSharedValue(0);
+
+  const finalTitleColor = titleColor || colors.primary;
+  const finalIconBg = iconBg || (colors.primary as string) + "15";
 
   const toggleExpand = () => {
     setExpanded(!expanded);
@@ -63,15 +67,19 @@ export const CollapsibleMenu = ({
       >
         <Row justify="space-between" full>
           <Row gap={12}>
-            <View style={[styles.mainIconCircle, { backgroundColor: iconBg }]}>
+            <View style={[styles.mainIconCircle, { backgroundColor: finalIconBg }]}>
               <Icon
                 name={icon}
                 type="material"
                 size={20}
-                color={iconBg === "#F1F5F9" ? "#64748B" : colors.primary}
+                color={
+                  finalIconBg === colors.slate100
+                    ? (colors.slate500 as string)
+                    : (colors.primary as string)
+                }
               />
             </View>
-            <Text style={[styles.menuGroupTitle, { color: titleColor }]}>
+            <Text style={[styles.menuGroupTitle, { color: finalTitleColor as string }]}>
               {title}
             </Text>
           </Row>
@@ -81,7 +89,7 @@ export const CollapsibleMenu = ({
               name="chevron-right"
               type="material"
               size={22}
-              color="#94A3B8"
+              color={colors.slate400 as string}
             />
           </Animated.View>
         </Row>
@@ -119,7 +127,6 @@ const styles = StyleSheet.create({
   menuGroupTitle: {
     fontSize: 15,
     fontWeight: "500",
-    color: "#334155",
   },
   collapsedContent: {
     overflow: "hidden",

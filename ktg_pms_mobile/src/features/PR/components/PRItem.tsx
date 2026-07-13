@@ -1,11 +1,11 @@
-import { Icon } from "@rneui/base";
 import moment from "moment";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Badge } from "~/components";
-import { Card, Column, Row, Spacer, Tag, Text } from "~/common";
+import { Card, Row, Spacer, Tag, Text } from "~/common";
+import { Badge, MainItemInfo } from "~/components";
 import { useTheme } from "~/hooks/useTheme";
 import { PRItemData } from "~/services/pr/pr.type";
+import globalStyle from "~/styles/global-style";
 import PRItemSkeleton from "./PRItemSkeleton";
 
 interface PRItemProps {
@@ -15,7 +15,7 @@ interface PRItemProps {
   isApprove?: boolean;
 }
 
-const PRItem = ({ item, onPress, loading, isApprove }: PRItemProps) => {
+const PRItem = ({ item, onPress, loading }: PRItemProps) => {
   const { colors } = useTheme();
 
   if (loading) return <PRItemSkeleton />;
@@ -72,13 +72,13 @@ const PRItem = ({ item, onPress, loading, isApprove }: PRItemProps) => {
   };
 
   return (
-    <Card shadow style={styles.card} padding={10} onPress={onPress}>
+    <Card shadow style={globalStyle.item} onPress={onPress}>
       {/* 1. Status Tag Row (Col 2 & 3 with Inline Labels) */}
-      <View style={styles.tagRow}>
+      <View style={globalStyle.tagRow}>
         <Badge
           label="Trạng thái"
           value={item.statusName}
-          color={item.statusColor}
+          color={item.status === "W_A" ? colors.active : item.statusColor}
         />
 
         {budgetInfo && (
@@ -95,25 +95,16 @@ const PRItem = ({ item, onPress, loading, isApprove }: PRItemProps) => {
       {/* 2. Identifier Section (Col 5, 6) */}
       <Row align="center" justify="space-between">
         <Row align="center" style={{ flex: 1 }}>
-          <View
-            style={[
-              styles.iconBox,
-              { borderColor: colors.white, marginRight: 10 },
-            ]}
-          >
-            <Icon
-              name={isApprove ? "bell" : "file-text"}
-              type="feather"
-              size={16}
-              color={"#F3AF2B"}
-            />
-          </View>
-          <Text bold size={16} color={colors.title}>
-            {item.code}
-          </Text>
+          <MainItemInfo title={item.code} />
+
           {item.sapCode && (
-            <View style={styles.sapBadge}>
-              <Text size={13} bold color={"#F3AF2B"}>
+            <View
+              style={[
+                styles.sapBadge,
+                { backgroundColor: colors.statusInfoBg },
+              ]}
+            >
+              <Text size={13} bold color={colors.brandOrange}>
                 SAP: {item.sapCode}
               </Text>
             </View>
@@ -124,7 +115,7 @@ const PRItem = ({ item, onPress, loading, isApprove }: PRItemProps) => {
       <Spacer size={12} />
 
       {/* 3. Metadata Tag Cloud (Consolidated Tags + Uses) */}
-      <View style={styles.tagRow}>
+      <View style={globalStyle.tagRow}>
         {/* Col 8: Uses as a Tag (ALWAYS SHOW) */}
         <Tag
           icon="file-text"
@@ -144,11 +135,11 @@ const PRItem = ({ item, onPress, loading, isApprove }: PRItemProps) => {
         />
 
         {/* Col 4, 9, 10, 11, 12, 13, 16 */}
-        <Tag icon="map-pin" label="Plant" value={item.plantCode || "N/A"} />
+        <Tag icon="map-pin" label="Plant" value={item.plantCode || "---"} />
         <Tag
           icon="users"
           label="Nhóm mua"
-          value={item.purchasingGroupCode || "N/A"}
+          value={item.purchasingGroupCode || "---"}
         />
         <Tag icon="tag" label="Chứng từ" value={item.prType || ""} />
         <Tag
@@ -170,17 +161,17 @@ const PRItem = ({ item, onPress, loading, isApprove }: PRItemProps) => {
           icon="check-circle"
           label="Release"
           value={item.approvalProgress || "0/0"}
-          color={"#F3AF2B"}
+          color={colors.brandOrange as string}
         />
       </View>
 
       <Spacer size={10} />
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.divider }]} />
       <Spacer size={10} />
 
       <View style={{ gap: 5 }}>
         <Row justify="space-between" align="center">
-          <Text size={11} bold color={colors.label}>
+          <Text size={12} weight={"700"} color={colors.label}>
             TỔNG GIÁ TRỊ
           </Text>
           <Row align="baseline">
@@ -193,7 +184,7 @@ const PRItem = ({ item, onPress, loading, isApprove }: PRItemProps) => {
         </Row>
 
         <Row justify="space-between" align="center">
-          <Text size={11} bold color={colors.label}>
+          <Text size={12} weight={"700"} color={colors.label}>
             NGÂN SÁCH THIẾU
           </Text>
           <Row align="baseline">
@@ -212,15 +203,6 @@ const PRItem = ({ item, onPress, loading, isApprove }: PRItemProps) => {
 export default PRItem;
 
 const styles = StyleSheet.create({
-  card: {
-    marginBottom: 8,
-    borderColor: "#F1F5F9",
-  },
-  tagRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 5,
-  },
   iconBox: {
     width: 28,
     height: 28,
@@ -229,7 +211,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   sapBadge: {
-    backgroundColor: "#EFF6FF",
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 6,
@@ -237,6 +218,5 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#F1F5F9",
   },
 });

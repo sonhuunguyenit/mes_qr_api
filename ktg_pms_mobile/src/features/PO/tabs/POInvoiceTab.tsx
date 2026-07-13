@@ -8,14 +8,12 @@ import {
   Linking,
 } from "react-native";
 import { Table, Spacer, Text } from "~/common";
+import globalStyle from "~/styles/global-style";
 import { useTheme } from "~/hooks/useTheme";
 import { useSheet } from "~/contexts/SheetContext";
 import { useInvoiceList } from "../hooks";
 import { PODetailData } from "~/services/po/po.type";
 import { InvoiceItem } from "~/services/invoice/invoice.type";
-import POInvoiceTableFilterSheet, {
-  POInvoiceTableFilters,
-} from "../sheets/POInvoiceTableFilterSheet";
 import POInvoiceDetailSheet from "../sheets/POInvoiceDetailSheet";
 
 interface POInvoiceTabProps {
@@ -28,33 +26,22 @@ const POInvoiceTab = ({ data }: POInvoiceTabProps) => {
   const [pageIndex, setPageIndex] = useState(1);
   const pageSize = 10;
 
-  const [filters, setFilters] = useState<POInvoiceTableFilters>({
-    billCode: "",
-    currencyName: "",
-    invoiceValue: "",
-    vat: "",
-    totalInvoiceValue: "",
-    statusName: "",
-  });
-
+  const poId = data?.id || (data as any)?.response?.id;
   const { data: invoiceData, isLoading } = useInvoiceList({
-    ...filters,
     pageIndex,
     pageSize,
+    poId: poId,
   });
-
-  const handleOpenFilter = () => {
-    openSheet(
-      <POInvoiceTableFilterSheet
-        initialFilters={filters}
-        onApply={setFilters}
-        onClose={closeSheet}
-      />,
-    );
-  };
 
   const handleOpenDetail = (item: InvoiceItem) => {
     openSheet(<POInvoiceDetailSheet data={item} onClose={closeSheet} />);
+  };
+
+  const handleRowDoublePress = (index: number) => {
+    const item = invoiceData?.data?.[index];
+    if (item) {
+      handleOpenDetail(item);
+    }
   };
 
   const columns = [
@@ -65,10 +52,9 @@ const POInvoiceTab = ({ data }: POInvoiceTabProps) => {
     "Trị giá",
     "Thuế VAT",
     "Tổng trị giá",
-    <Table.ButtonFilterTable key="invoice-filter" onPress={handleOpenFilter} />,
   ];
 
-  const columnWidths = [60, 150, 120, 120, 120, 100, 150, 50];
+  const columnWidths = [60, 150, 120, 120, 120, 100, 150];
 
   const rows = (invoiceData?.data || []).map(
     (item: InvoiceItem, index: number) => ({
@@ -91,7 +77,6 @@ const POInvoiceTab = ({ data }: POInvoiceTabProps) => {
         item.invoiceValue?.toLocaleString(),
         item.vat,
         item.totalInvoiceValue?.toLocaleString(),
-        <Table.EyeDetailRow onPress={() => handleOpenDetail(item)} />,
       ],
     }),
   );
@@ -105,35 +90,26 @@ const POInvoiceTab = ({ data }: POInvoiceTabProps) => {
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Table
-          columns={columns}
-          rows={rows}
-          columnWidths={columnWidths}
-          horizontalScroll
-          stickyColumn="right"
-          containerStyle={styles.table}
-          pagination={{
-            enabled: true,
-            defaultPageSize: 5,
-            pageSizeOptions: [],
-            showTotal: false,
-          }}
-        />
-        <Spacer size={20} />
-      </ScrollView>
-    </View>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={globalStyle.scrollContainerDetail}
+    >
+      <Table
+        columns={columns}
+        rows={rows}
+        columnWidths={columnWidths}
+        horizontalScroll
+        onRowDoublePress={handleRowDoublePress}
+        containerStyle={styles.table}
+      />
+      <Spacer size={10} />
+    </ScrollView>
   );
 };
 
 export default POInvoiceTab;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 16,
-  },
   center: {
     flex: 1,
     justifyContent: "center",

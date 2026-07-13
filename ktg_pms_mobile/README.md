@@ -49,11 +49,11 @@ APP_VERSION=1.0.0
 APP_RUNTIME_VERSION=1.0.0
 
 # iOS Configuration
-IOS_BUNDLE_IDENTIFIER=com.ktg.pms.prod
+IOS_BUNDLE_IDENTIFIER=com.ktg.pms.dev
 IOS_BUILD_NUMBER=1
 
 # Android Configuration
-ANDROID_PACKAGE=com.ktg.pms.prod
+ANDROID_PACKAGE=com.ktg.pms.dev
 ANDROID_VERSION_CODE=1
 
 # Build Configuration

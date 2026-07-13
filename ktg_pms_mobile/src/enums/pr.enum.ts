@@ -9,6 +9,8 @@ export enum PR_STATUS {
   ERROR = "C_PR", // PR lỗi
 }
 
+export const CI_IGNORE = ["MIGO", "GRIR", "TAX", "CM", "AP", "AR"];
+
 export const PR_STATUS_CONFIG: Record<
   string,
   { label: string; color: string; bgColor: string; borderColor: string }

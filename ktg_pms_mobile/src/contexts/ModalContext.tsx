@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
   ViewStyle,
+  Keyboard,
 } from "react-native";
 import { colors } from "~/constants/colors";
 
@@ -18,13 +19,15 @@ export interface ModalOptions {
   title?: string;
   message?: string;
   component?: React.ReactNode;
-  onConfirm?: () => void;
+  onConfirm?: () => void | boolean | Promise<void | boolean>;
   confirmText?: string;
   onCancel?: () => void;
   cancelText?: string;
   overlay?: boolean;
   style?: StyleProp<ViewStyle>;
   showButton?: boolean;
+  dismissible?: boolean;
+  dividerFooter?: boolean;
 }
 
 interface ModalContextValue {
@@ -51,6 +54,7 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
       isShow: true,
       options: {
         overlay: true,
+        dividerFooter: true,
         ...opts,
       },
     });
@@ -88,6 +92,8 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
             <Pressable
               style={styles.backdrop}
               onPress={() => {
+                Keyboard.dismiss();
+                if (options?.dismissible === false) return;
                 if ((isLoading && options?.overlay) || !isLoading) hide();
               }}
             />
@@ -110,23 +116,34 @@ const ModalProvider = ({ children }: { children: React.ReactNode }) => {
 
               {options?.component}
 
-              <View style={[styles.actions, { gap: 10 }]}>
+              <View
+                style={[
+                  styles.actions,
+                  options?.dividerFooter && {
+                    borderTopWidth: 1,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
                 {(options?.onConfirm || isPopup) && (
                   <TouchableOpacity
-                    style={[styles.button, { backgroundColor: colors.active }]}
+                    style={[styles.button, { backgroundColor: colors.primary }]}
                     onPress={() => {
-                      options?.onConfirm?.();
-                      hide();
+                      const res = options?.onConfirm?.();
+                      if (res !== false) {
+                        hide();
+                      }
                     }}
                   >
-                    <Text style={[styles.buttonText, { color: "#fff" }]}>
+                    <Text style={[styles.buttonText, { color: colors.black }]}>
                       {isPopup ? "Đồng ý" : options?.confirmText || "Xác nhận"}
                     </Text>
                   </TouchableOpacity>
                 )}
+                {/* F1F5F9 64748B  */}
                 {!isPopup && options?.onCancel && (
                   <TouchableOpacity
-                    style={styles.button}
+                    style={[styles.button]}
                     onPress={() => {
                       options?.onCancel?.();
                       hide();
@@ -178,12 +195,11 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    marginTop: 15,
     gap: 10,
+    paddingTop: 10,
+    marginTop: 5,
   },
   button: {
-    borderColor: "#d9d9d9",
-    borderWidth: 1,
     backgroundColor: "#ffffff",
     paddingHorizontal: 15,
     paddingVertical: 4,
@@ -194,7 +210,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   buttonText: {
-    fontSize: 16,
     textAlign: "center",
     fontWeight: "500",
   },

@@ -1,44 +1,39 @@
-import { useRoute } from "@react-navigation/native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import moment from "moment";
-import React, { useCallback, useState } from "react";
-import { FlatList, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import React, { useCallback, useMemo, useState } from "react";
+import { FlatList } from "react-native";
 import { Empty, Header, Linear } from "~/common";
 import { Container } from "~/components";
 import { ROUTE_KEYS } from "~/constants/route";
+import { PLACEHOLDER_SEARCH_BAR } from "~/constants";
 import { useSheet } from "~/contexts/SheetContext";
+import { PR_STATUS } from "~/enums";
+import { AppNavigatorParamList } from "~/navigation/navigation.type";
 import { PRFilterParams, PRItemData } from "~/services/pr/pr.type";
+import globalStyle from "~/styles/global-style";
 import { goPRDetail } from "~/utils/navigate";
 import PRItem from "../components/PRItem";
 import PRItemSkeleton from "../components/PRItemSkeleton";
 import { usePRList } from "../hooks";
 import PRFilterSheet from "../sheets/PRFilterSheet";
-import { PR_STATUS } from "~/enums";
-import { AppNavigatorParamList } from "~/navigation/navigation.type";
 
 type Props = NativeStackScreenProps<
   AppNavigatorParamList,
   typeof ROUTE_KEYS.PR
 >;
 
-const PRScreen = () => {
-  const insets = useSafeAreaInsets();
+const PRScreen = ({ navigation, route }: Props) => {
   const { openSheet, closeSheet } = useSheet();
-  const route = useRoute<Props["route"]>();
-
-  const isApprove = route.params?.isApprove || route.params?.isNotifyApprove;
   const listTargetId = route.params?.listTargetId;
   const moduleType = route.params?.type;
 
   const [filters, setFilters] = useState<PRFilterParams>({
-    startDate: moment().subtract(1, "month").format("YYYY-MM-DD"),
-    endDate: moment().format("YYYY-MM-DD"),
+    startDate: undefined,
+    endDate: undefined,
     pageIndex: 1,
-    pageSize: 20,
+    pageSize: 10,
     listTargetId: listTargetId,
     moduleType: moduleType,
-    budgetStatus: isApprove ? "ALL" : undefined,
+    budgetStatus: undefined,
     isParentItem: 0,
     status: PR_STATUS.WAITING_APPROVAL,
   });
@@ -52,6 +47,14 @@ const PRScreen = () => {
     fetchNextPage,
     isFetchingNextPage,
   } = usePRList(filters);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  }, [refetch]);
 
   const handleApplyFilter = useCallback((newFilters: PRFilterParams) => {
     setFilters((prev) => ({ ...prev, ...newFilters, pageIndex: 1 }));
@@ -70,21 +73,30 @@ const PRScreen = () => {
     !!filters.createdBy ||
     !!filters.purchaseGroup ||
     !!filters.uses ||
-    (!!filters.status && filters.status !== "ALL") ||
-    (!!filters.prType && filters.prType !== "ALL") ||
-    (!!filters.sourceType && filters.sourceType !== "ALL") ||
-    (!!filters.plantId && filters.plantId !== "ALL");
+    (!!filters.status && filters.status !== PR_STATUS.WAITING_APPROVAL) ||
+    (!!filters.prType && filters.prType !== undefined) ||
+    (!!filters.sourceType && filters.sourceType !== undefined) ||
+    (!!filters.plantId && filters.plantId !== undefined) ||
+    (!!filters.budgetStatus && filters.budgetStatus !== undefined) ||
+    !!filters.keyword ||
+    filters.totalValueFrom !== undefined ||
+    filters.totalValueTo !== undefined ||
+    filters.budgetShortageFrom !== undefined ||
+    filters.budgetShortageTo !== undefined;
 
-  const openFilter = useCallback(() => {
-    openSheet(
+  const filterSheetFactory = useMemo(() => {
+    return () => (
       <PRFilterSheet
         initialFilters={filters}
         onApply={handleApplyFilter}
         onClose={closeSheet}
-        isApprove={isApprove}
-      />,
+      />
     );
-  }, [filters, isApprove]);
+  }, [filters, handleApplyFilter, closeSheet]);
+
+  const openFilter = useCallback(() => {
+    openSheet(filterSheetFactory);
+  }, [filterSheetFactory, openSheet]);
 
   const renderItem = ({ item }: { item: PRItemData }) => (
     <PRItem
@@ -93,7 +105,6 @@ const PRScreen = () => {
         closeSheet();
         goPRDetail(item);
       }}
-      isApprove={isApprove}
     />
   );
 
@@ -102,27 +113,27 @@ const PRScreen = () => {
 
   return (
     <Linear>
-      <Container>
-        <Header
-          title="Duyệt PR"
-          showBack={true}
-          showSearch={true}
-          searchMode="button"
-          onFilter={openFilter}
-          hasFilter={hasFilter}
-          onInput={{
-            value: filters.keyword,
-            onChange: (text) => handleApplyFilter({ keyword: text }),
-            placeholder: "Tìm kiếm mã PR, vật tư...",
-          }}
-        />
+      <Header
+        title="Duyệt PR"
+        subTitle="Danh sách PR chờ duyệt"
+        showBack={true}
+        showSearch={true}
+        searchMode="button"
+        onFilter={openFilter}
+        hasFilter={hasFilter}
+        onInput={{
+          value: filters.keyword,
+          onChange: (text) => handleApplyFilter({ keyword: text }),
+          placeholder: PLACEHOLDER_SEARCH_BAR,
+        }}
+      />
 
+      <Container disableInsetBottom={false}>
         {isLoading && !isRefetching ? (
           <FlatList
             data={[1, 2]}
             renderItem={() => <PRItemSkeleton />}
             keyExtractor={(item) => `skeleton-${item}`}
-            contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
           />
         ) : (
@@ -133,16 +144,11 @@ const PRScreen = () => {
               item.id?.toString() || Math.random().toString()
             }
             contentContainerStyle={[
-              {
-                paddingHorizontal: 5,
-                paddingTop: 10,
-                paddingBottom: insets.bottom + 100,
-              },
-              displayData.length === 0 && styles.emptyContainer,
+              displayData.length === 0 && globalStyle.emptyContainer,
             ]}
             showsVerticalScrollIndicator={false}
-            onRefresh={refetch}
-            refreshing={isRefetching}
+            onRefresh={handleRefresh}
+            refreshing={isRefreshing}
             ListEmptyComponent={<Empty />}
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
@@ -153,20 +159,5 @@ const PRScreen = () => {
     </Linear>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: 5,
-    paddingTop: 10,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
 
 export default PRScreen;

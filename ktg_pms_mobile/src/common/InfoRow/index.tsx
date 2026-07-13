@@ -20,7 +20,7 @@ type Props = {
   labelStyle?: TextProps & TextStyle;
   valueStyle?: TextProps & TextStyle;
   onPress?: () => void;
-  isLast?: boolean;
+  last?: boolean;
   style?: StyleProp<ViewStyle>;
   editable?: boolean;
   limitLabelLength?: number;
@@ -45,7 +45,7 @@ const InfoRow = ({
     bold: true,
   },
   onPress,
-  isLast,
+  last,
   style,
   editable = false,
   limitLabelLength,
@@ -122,7 +122,7 @@ const InfoRow = ({
           paddingVertical: spacing.md,
           borderBottomColor: colors.border,
         },
-        isLast && styles.noBorder,
+        last && styles.noBorder,
         style,
       ]}
     >

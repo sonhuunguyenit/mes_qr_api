@@ -1,8 +1,8 @@
 import { Row } from "~/common";
-import { colors } from "~/constants/colors";
 import { Icon, Text } from "@rneui/themed";
 import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
+import { useTheme } from "~/hooks/useTheme";
 
 interface DrawerMenuItemProps {
   title: string;
@@ -21,6 +21,7 @@ export const DrawerMenuItem = ({
   onPress,
   showDivider,
 }: DrawerMenuItemProps) => {
+  const { colors } = useTheme();
   return (
     <View>
       <TouchableOpacity style={styles.menuItem} onPress={onPress}>
@@ -28,10 +29,16 @@ export const DrawerMenuItem = ({
           <View style={[styles.miniIconBox, { backgroundColor: bg }]}>
             <Icon name={icon} type="material" color={color} size={18} />
           </View>
-          <Text style={styles.menuItemText}>{title}</Text>
+          <Text style={[styles.menuItemText, { color: colors.slate600 as string }]}>
+            {title}
+          </Text>
         </Row>
       </TouchableOpacity>
-      {showDivider && <View style={styles.menuDivider} />}
+      {showDivider && (
+        <View
+          style={[styles.menuDivider, { backgroundColor: colors.border as string }]}
+        />
+      )}
     </View>
   );
 };
@@ -50,12 +57,10 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 14,
-    color: "#475569",
     fontWeight: "500",
   },
   menuDivider: {
     height: 1,
-    backgroundColor: colors.border,
     marginLeft: 60,
   },
 });

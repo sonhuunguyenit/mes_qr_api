@@ -1,12 +1,13 @@
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import React from "react";
-import { StyleSheet, View } from "react-native";
-import { Column, Row, Text } from "~/common";
-import { StatusBadge } from "~/components";
+import { View } from "react-native";
+import { Column, Row } from "~/common";
+import { HeaderSheet, StatusBadge } from "~/components";
+import { ColumnInfo } from "~/components/ColumnInfo";
 import { BUDGET_STATUS, BUDGET_STATUS_CONFIG } from "~/enums/pr.enum";
 import { useTheme } from "~/hooks/useTheme";
 import { PRBudgetReceiptItem } from "~/services/pr/pr.type";
-import { PRFieldItem } from "../components/PRFieldItem";
+import DateHelper from "~/utils/date";
 
 interface PRBudgetDetailSheetProps {
   item: PRBudgetReceiptItem;
@@ -21,45 +22,67 @@ export const PRBudgetDetailSheet = ({ item }: PRBudgetDetailSheetProps) => {
     val ? Number(val).toLocaleString("en-US") : "0";
 
   return (
-    <BottomSheetScrollView style={{ padding: spacing.md }}>
-      <Text size={18} bold style={{ marginBottom: 20 }}>
-        Chi tiết điều chỉnh ngân sách
-      </Text>
+    <View style={{ flex: 1 }}>
+      <HeaderSheet type="detail" />
+      <BottomSheetScrollView style={{ flex: 1, padding: spacing.sm }}>
+        <Column gap={12} align="stretch" padding={[10, 0]}>
+          <ColumnInfo
+            label="Số phiếu"
+            value={item.budgetReceiptCode || "---"}
+            full
+          />
 
-      <Column gap={12} align="stretch" style={styles.contentContainer}>
-        <PRFieldItem
-          label="Số phiếu"
-          value={item.budgetReceiptCode || "---"}
-          fullWidth
-        />
+          <Row>
+            <ColumnInfo label="Kỳ" value={item.budgetPeriod || "---"} />
+            <ColumnInfo label="Số tiền" value={formatNum(item.moneyPropose)} />
+          </Row>
 
-        <Row full gap={16}>
-          <PRFieldItem label="Kỳ" value={item.budgetPeriod || "---"} />
-          <PRFieldItem label="Số tiền" value={formatNum(item.moneyPropose)} />
-        </Row>
-
-        <PRFieldItem
-          label="Trạng thái"
-          value={
-            <StatusBadge
+          <Row>
+            <ColumnInfo label="Người tạo" value={item.employeeName || "---"} />
+            <ColumnInfo
+              label="Ngày tạo"
               value={
-                item.statusName || statusConfig?.label || item.status || "---"
+                item.createdAt ? DateHelper.formatDate(item.createdAt) : "---"
               }
-              color={item.statusColor || statusConfig?.color || colors.text}
-              bgColor={item.statusBgColor || statusConfig?.bgColor || "#f0f0f0"}
             />
-          }
-          fullWidth
-        />
+          </Row>
 
-        <View style={{ height: 40 }} />
-      </Column>
-    </BottomSheetScrollView>
+          <Row>
+            <ColumnInfo label="Fund" value={item.fund || "---"} />
+            <ColumnInfo label="CI" value={item.ci || "---"} />
+          </Row>
+
+          <Row>
+            <ColumnInfo label="FP" value={item.fp || "---"} />
+            <ColumnInfo label="FC" value={item.fc || "---"} />
+          </Row>
+
+          <ColumnInfo
+            label="Trạng thái"
+            value={
+              <StatusBadge
+                value={
+                  item.statusName || statusConfig?.label || item.status || "---"
+                }
+                color={
+                  (item.statusColor ||
+                    statusConfig?.color ||
+                    colors.text) as string
+                }
+                bgColor={
+                  (item.statusBgColor ||
+                    statusConfig?.bgColor ||
+                    colors.neutral150) as string
+                }
+              />
+            }
+            full
+            last
+          />
+
+          <View style={{ height: 40 }} />
+        </Column>
+      </BottomSheetScrollView>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  contentContainer: {
-    paddingBottom: 20,
-  },
-});

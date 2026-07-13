@@ -1,9 +1,10 @@
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { Icon } from "@rneui/themed";
 import moment from "moment";
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { Column, Row, Spacer, Text } from "~/common";
+import { View } from "react-native";
+import { Column, Row } from "~/common";
+import { HeaderSheet } from "~/components";
+import { ColumnInfo } from "~/components/ColumnInfo";
 import { useTheme } from "~/hooks/useTheme";
 import { InboundItem } from "~/services/inbound/inbound.type";
 
@@ -12,139 +13,73 @@ interface POInboundDetailSheetProps {
   onClose: () => void;
 }
 
-const POInboundDetailSheet = ({ data, onClose }: POInboundDetailSheetProps) => {
-  const { colors } = useTheme();
-
-  const DetailItem = ({ label, value }: { label: string; value?: string }) => (
-    <View style={styles.detailItem}>
-      <Text size={12} color={colors.label} style={styles.label}>
-        {label}
-      </Text>
-      <Text bold size={14} color={colors.title}>
-        {value || "---"}
-      </Text>
-    </View>
-  );
+const POInboundDetailSheet = ({ data }: POInboundDetailSheetProps) => {
+  const { spacing } = useTheme();
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Icon name="info" type="feather" size={22} color={colors.primary} />
-        <Text bold size={16} color={colors.title}>
-          Chi tiết Inbound
-        </Text>
-        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-          <Icon name="x" type="feather" size={24} color={colors.label} />
-        </TouchableOpacity>
-      </View>
+    <View style={{ flex: 1 }}>
+      <HeaderSheet type="detail" />
 
-      <BottomSheetScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <Column gap={16}>
-          <Row full gap={12}>
-            <View style={{ flex: 1 }}>
-              <DetailItem label="Số Inbound PMS" value={data.inboundNumber} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <DetailItem
-                label="Số Inbound SAP"
-                value={data.sapShipmentNumber}
-              />
-            </View>
+      <BottomSheetScrollView style={{ flex: 1, padding: spacing.sm }}>
+        <Column gap={12} align="stretch" padding={[10, 0]}>
+          <Row>
+            <ColumnInfo label="Số Inbound PMS" value={data.inboundNumber} />
+            <ColumnInfo label="Số Inbound SAP" value={data.sapShipmentNumber} />
           </Row>
 
-          <Row full gap={12}>
-            <View style={{ flex: 1 }}>
-              <DetailItem label="Số shipment" value={data.shippingType} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <DetailItem
-                label="Số Shipment Cost"
-                value={data.shipmentCostNumber}
-              />
-            </View>
+          <Row>
+            <ColumnInfo label="Số shipment" value={data.shippingType} />
+            <ColumnInfo
+              label="Số Shipment Cost"
+              value={data.shipmentCostNumber}
+            />
           </Row>
 
-          <Row full gap={12}>
-            <DetailItem label="Nhà cung cấp" value={data.supplierName} />
+          <ColumnInfo label="Nhà cung cấp" value={data.supplierName} full />
+
+          <Row>
+            <ColumnInfo
+              label="Ngày về cảng"
+              value={
+                data.dateArrivalPort
+                  ? moment(data.dateArrivalPort).format("DD/MM/YYYY")
+                  : "---"
+              }
+            />
+            <ColumnInfo
+              label="Ngày về kho dự kiến"
+              value={
+                data.dateArrivalWarehouse
+                  ? moment(data.dateArrivalWarehouse).format("DD/MM/YYYY")
+                  : "---"
+              }
+            />
           </Row>
 
-          <Row full gap={12}>
-            <View style={{ flex: 1 }}>
-              <DetailItem
-                label="Ngày về cảng"
-                value={
-                  data.dateArrivalPort
-                    ? moment(data.dateArrivalPort).format("DD/MM/YYYY")
-                    : "---"
-                }
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <DetailItem
-                label="Ngày về kho dự kiến"
-                value={
-                  data.dateArrivalWarehouse
-                    ? moment(data.dateArrivalWarehouse).format("DD/MM/YYYY")
-                    : "---"
-                }
-              />
-            </View>
+          <Row>
+            <ColumnInfo
+              label="Ngày tạo"
+              value={
+                data.createdAt
+                  ? moment(data.createdAt).format("DD/MM/YYYY HH:mm")
+                  : "---"
+              }
+            />
+            <ColumnInfo label="Người tạo" value={data.createdByName} />
           </Row>
 
-          <Row full gap={12}>
-            <View style={{ flex: 1 }}>
-              <DetailItem
-                label="Ngày tạo"
-                value={
-                  data.createdAt
-                    ? moment(data.createdAt).format("DD/MM/YYYY HH:mm")
-                    : "---"
-                }
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <DetailItem label="Người tạo" value={data.createdByName} />
-            </View>
-          </Row>
+          <ColumnInfo
+            label="Trạng thái"
+            value={data.statusName || "---"}
+            full
+            last
+          />
 
-          <Row full gap={12}>
-            <DetailItem label="Trạng thái" value={data.statusName} />
-          </Row>
+          <View style={{ height: 40 }} />
         </Column>
-        <Spacer size={30} />
       </BottomSheetScrollView>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  detailItem: {
-    marginBottom: 8,
-  },
-  label: {
-    marginBottom: 4,
-  },
-});
 
 export default POInboundDetailSheet;

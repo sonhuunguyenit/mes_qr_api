@@ -73,10 +73,10 @@ export const Text = ({
 
   // Cấu hình theo Type (Header, Title, Label, Value)
   if (header) {
-    textStyle.fontSize = size || sizes.fontSize.xxxl;
+    textStyle.fontSize = size || sizes.fontSize.lg;
     textColor = color || colors.header;
   } else if (title) {
-    textStyle.fontSize = size || sizes.fontSize.xl;
+    textStyle.fontSize = size || sizes.fontSize.md;
     textColor = color || colors.title;
   } else if (label) {
     textStyle.fontSize = size || sizes.fontSize.base;

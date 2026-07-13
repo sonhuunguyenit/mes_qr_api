@@ -1,10 +1,10 @@
-import { colors } from "~/constants/colors";
 import { typography } from "~/constants/typography";
 import { Icon } from "@rneui/base";
 import React, { memo, useState } from "react";
 import { View, StyleSheet } from "react-native";
 import { Dropdown as RNDropdown } from "react-native-element-dropdown";
 import { Text } from "../Text";
+import { useTheme } from "~/hooks/useTheme";
 
 interface DropdownProps {
   label?: string;
@@ -28,12 +28,13 @@ export const Dropdown = memo(
     editable = true,
     containerStyle,
   }: DropdownProps) => {
+    const { colors, radius } = useTheme();
     const [isFocus, setIsFocus] = useState(false);
 
     return (
       <View style={[styles.container, containerStyle]}>
         {label && (
-          <Text label style={styles.label}>
+          <Text label style={[styles.label, { color: colors.label }]}>
             {label}
           </Text>
         )}
@@ -41,12 +42,20 @@ export const Dropdown = memo(
         <RNDropdown
           style={[
             styles.dropdown,
-            isFocus && styles.focused,
-            !editable && styles.disabled,
-            errorMessage && styles.errorBorder,
+            {
+              borderColor: colors.border,
+              backgroundColor: colors.card,
+              borderRadius: radius.sm,
+            },
+            isFocus && { borderColor: colors.primary },
+            !editable && {
+              backgroundColor: colors.disabledBg,
+              borderColor: colors.border,
+            },
+            errorMessage && { borderColor: colors.error },
           ]}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
+          placeholderStyle={[styles.placeholderStyle, { color: colors.placeholder }]}
+          selectedTextStyle={[styles.selectedTextStyle, { color: colors.value }]}
           data={data}
           maxHeight={360}
           labelField="label"
@@ -60,24 +69,42 @@ export const Dropdown = memo(
             setIsFocus(false);
           }}
           disable={!editable}
-          activeColor="rgba(24, 144, 255, 0.1)"
-          containerStyle={styles.dropdownContainer}
+          activeColor={colors.blueAlpha10 as string}
+          containerStyle={[
+            styles.dropdownContainer,
+            {
+              borderColor: colors.border,
+              backgroundColor: colors.card,
+              shadowColor: colors.black as any,
+              borderRadius: radius.sm,
+            },
+          ]}
           renderRightIcon={() => (
             <Icon
               type="feather"
               name="chevron-down"
               size={20}
-              color={editable ? "#00000073" : "#00000040"}
+              color={
+                editable
+                  ? (colors.blackOpacity45 as string)
+                  : (colors.blackOpacity25 as string)
+              }
             />
           )}
           renderItem={(item) => (
-            <View style={styles.item}>
-              <Text style={styles.itemText}>{item.label}</Text>
+            <View style={[styles.item, { backgroundColor: colors.card }]}>
+              <Text style={[styles.itemText, { color: colors.text }]}>
+                {item.label}
+              </Text>
             </View>
           )}
         />
 
-        {errorMessage && <Text style={styles.errorText}>{errorMessage}</Text>}
+        {errorMessage && (
+          <Text style={[styles.errorText, { color: colors.error }]}>
+            {errorMessage}
+          </Text>
+        )}
       </View>
     );
   },
@@ -92,46 +119,22 @@ const styles = StyleSheet.create({
   },
   label: {
     ...typography.label,
-    color: colors.label,
     marginBottom: 6,
   },
   dropdown: {
     height: 50,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
     paddingHorizontal: 12,
-    backgroundColor: colors.white,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  focused: {
-    borderColor: colors.primary,
-  },
-  disabled: {
-    backgroundColor: colors.disabledBg,
-    borderColor: colors.border,
-  },
-  errorBorder: {
-    borderColor: colors.error,
-  },
-  placeholderStyle: {
-    ...typography.body,
-    color: colors.placeholder,
-  },
-  selectedTextStyle: {
-    ...typography.body,
-    color: colors.value,
-  },
+  placeholderStyle: {},
+  selectedTextStyle: {},
   dropdownContainer: {
     marginTop: 4,
-    borderRadius: 8,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
     elevation: 8,
-    shadowColor: colors.black,
     shadowOffset: {
       width: 0,
       height: 2,
@@ -144,15 +147,11 @@ const styles = StyleSheet.create({
     height: 50,
     paddingHorizontal: 12,
     justifyContent: "center",
-    backgroundColor: colors.white,
   },
   itemText: {
-    ...typography.body,
-    color: colors.text,
+    ...typography.text,
   },
   errorText: {
-    color: colors.error,
-    ...typography.caption,
     marginTop: 4,
   },
 });

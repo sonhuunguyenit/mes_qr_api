@@ -1,37 +1,33 @@
 import React from "react";
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView } from "react-native";
 import { Spacer } from "~/common";
+import { PRReleaseItem, PRReleaseLevel } from "~/services/pr/pr.type";
+import globalStyle from "~/styles/global-style";
 import { PRDetailGeneral } from "../components/PRDetailGeneral";
-import { PRDetailApproval } from "../components/PRDetailApproval";
 import { PRDetailItems } from "../components/PRDetailItems";
-import { PRApprovalItem, PRApprovalLevel } from "~/services/pr/pr.type";
+import { PRDetailRealese } from "../components/PRDetailRealese";
 
 interface PRDetailInfoTabProps {
   data: any;
-  onShowApprovalDetail: (level: PRApprovalLevel, item: PRApprovalItem) => void;
+  onShowReleaseDetail: (level: PRReleaseLevel, item: PRReleaseItem) => void;
   onShowItemDetail: (item: any) => void;
 }
 
 export const PRDetailInfoTab = React.memo(
-  ({ data, onShowApprovalDetail, onShowItemDetail }: PRDetailInfoTabProps) => {
+  ({ data, onShowReleaseDetail, onShowItemDetail }: PRDetailInfoTabProps) => {
     return (
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={globalStyle.scrollContainerDetail}
       >
         <PRDetailGeneral data={data} />
         <Spacer size={10} />
-        <PRDetailApproval data={data} onShowDetail={onShowApprovalDetail} />
+
+        <PRDetailRealese data={data} onShowDetail={onShowReleaseDetail} />
         <Spacer size={10} />
+
         <PRDetailItems data={data} onShowDetail={onShowItemDetail} />
-        <Spacer size={120} />
       </ScrollView>
     );
   },
 );
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 5,
-  },
-});

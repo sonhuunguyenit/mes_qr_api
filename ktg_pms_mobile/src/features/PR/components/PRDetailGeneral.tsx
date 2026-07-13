@@ -3,10 +3,10 @@ import React from "react";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { Collapse, Column, Row, Text } from "~/common";
 import { StatusBadge } from "~/components";
+import { ColumnInfo } from "~/components/ColumnInfo";
 import { PR_STATUS, PR_STATUS_CONFIG } from "~/enums/pr.enum";
 import { useTheme } from "~/hooks/useTheme";
 import { PRItemData } from "~/services/pr/pr.type";
-import { PRFieldItem } from "./PRFieldItem";
 
 interface PRDetailGeneralProps {
   data: PRItemData;
@@ -16,22 +16,22 @@ export const PRDetailGeneral = React.memo(({ data }: PRDetailGeneralProps) => {
   const { colors } = useTheme();
 
   return (
-    <Collapse title="I. Thông tin chung" collapsible defaultExpanded={true}>
-      <Column gap={12} align="stretch" style={styles.sectionContent}>
+    <Collapse title="I. Thông tin chung" collapsible>
+      <Column gap={12} align="stretch">
         <Row full gap={16}>
-          <PRFieldItem label="Mã PR PMS" value={data.code} />
-          <PRFieldItem label="Số PR SAP" value={data.sapCode} />
+          <ColumnInfo label="Mã PR PMS" value={data.code} />
+          <ColumnInfo label="Số PR SAP" value={data.sapCode} />
         </Row>
 
-        <PRFieldItem
+        <ColumnInfo
           label="Plant"
           value={data.plantLable || data.plantName || data.plantCode}
-          fullWidth
+          full
         />
 
         <Row full gap={16}>
-          <PRFieldItem label="Loại chứng từ" value={data.prType} />
-          <PRFieldItem
+          <ColumnInfo label="Loại chứng từ" value={data.prType} />
+          <ColumnInfo
             label="Trạng thái"
             value={
               <StatusBadge
@@ -42,7 +42,7 @@ export const PRDetailGeneral = React.memo(({ data }: PRDetailGeneralProps) => {
                 color={
                   data.statusColor ||
                   PR_STATUS_CONFIG[data.status as PR_STATUS]?.color ||
-                  colors.primary
+                  (colors.primary as any)
                 }
                 bgColor={
                   data.statusBgColor ||
@@ -54,23 +54,19 @@ export const PRDetailGeneral = React.memo(({ data }: PRDetailGeneralProps) => {
                 }
               />
             }
+            last
           />
         </Row>
 
-        <PRFieldItem
-          label="Mã PR tổng hợp"
-          value={data.prParentCode}
-          fullWidth
-        />
+        <ColumnInfo label="Mã PR tổng hợp" value={data.prParentCode} full />
+
+        <ColumnInfo label="Bộ phận yêu cầu" value={data.departmentName} />
+
+        <ColumnInfo label="Người yêu cầu" value={data.requisitionerName} />
 
         <Row full gap={16}>
-          <PRFieldItem label="Bộ phận yêu cầu" value={data.departmentName} />
-          <PRFieldItem label="Người yêu cầu" value={data.requisitionerName} />
-        </Row>
-
-        <Row full gap={16}>
-          <PRFieldItem label="Người tạo" value={data.createdByName} />
-          <PRFieldItem
+          <ColumnInfo label="Người tạo" value={data.createdByName} />
+          <ColumnInfo
             label="Ngày tạo"
             value={
               data.createdAt
@@ -81,7 +77,7 @@ export const PRDetailGeneral = React.memo(({ data }: PRDetailGeneralProps) => {
         </Row>
 
         <Row full gap={16}>
-          <PRFieldItem
+          <ColumnInfo
             label="Giờ tạo"
             value={
               data.createdTimeAt
@@ -92,14 +88,14 @@ export const PRDetailGeneral = React.memo(({ data }: PRDetailGeneralProps) => {
                 : "---"
             }
           />
-          <PRFieldItem
+          <ColumnInfo
             label="Tổng giá trị"
             value={Number(data.totalValue ?? 0).toLocaleString("en-US")}
           />
         </Row>
 
         {data.lstMediaFile && data.lstMediaFile.length > 0 && (
-          <View style={styles.fileSection}>
+          <View style={[styles.fileSection, { borderBottomColor: colors.divider }]}>
             <Text
               bold
               color={colors.label}
@@ -112,10 +108,11 @@ export const PRDetailGeneral = React.memo(({ data }: PRDetailGeneralProps) => {
               {data.lstMediaFile.map((file, index) => (
                 <TouchableOpacity
                   key={index}
-                  style={[styles.fileChip, { borderColor: colors.primary }]}
+                  style={[styles.fileChip, { borderColor: colors.primary, backgroundColor: colors.statusInfoBg }]}
                 >
-                  <Text color={colors.primary} size={12} bold>
-                    File {index + 1}
+                  {/* sync from pr-detail.component.html:70 */}
+                  <Text color={colors.primary} size={12} bold numberOfLines={1}>
+                    {file.fileName || `File ${index + 1}`}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -123,28 +120,23 @@ export const PRDetailGeneral = React.memo(({ data }: PRDetailGeneralProps) => {
           </View>
         )}
 
-        <PRFieldItem label="Header note" value={data.headerNote} />
-        <PRFieldItem label="Mục đích sử dụng" value={data.uses} />
+        <ColumnInfo label="Header note" value={data.headerNote} />
+        <ColumnInfo label="Mục đích sử dụng" value={data.uses} last />
       </Column>
     </Collapse>
   );
 });
 
 const styles = StyleSheet.create({
-  sectionContent: {
-    paddingVertical: 12,
-  },
   fileSection: {
     marginTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
   },
   fileChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    backgroundColor: "#F0F7FF",
   },
 });

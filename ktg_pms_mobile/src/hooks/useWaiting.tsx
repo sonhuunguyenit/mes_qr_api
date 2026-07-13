@@ -8,9 +8,14 @@ export const useWaiting = () => {
     (title?: string, message?: string) => {
       show({
         type: "loading",
+        style: {
+          minWidth: 160,
+        },
         title: title || "Đang xử lý",
         message: message || "Vui lòng đợi ... ",
         overlay: false,
+        dismissible: false,
+        dividerFooter: false,
       });
     },
     [show],

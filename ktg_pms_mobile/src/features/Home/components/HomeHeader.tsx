@@ -1,104 +1,180 @@
+import { Icon } from "@rneui/base";
 import React from "react";
 import {
-  StyleSheet,
-  View,
   Image,
-  TouchableOpacity,
+  Platform,
+  StyleSheet,
   TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Icon } from "@rneui/base";
-import { Row, Spacer, Text } from "~/common";
-import { useTheme } from "~/hooks/useTheme";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Images } from "~/assets";
+import { Row, Spacer, Text } from "~/common";
+import { useTheme } from "~/hooks/useTheme";
 import { goNotification, goUserInfo } from "~/utils/navigate";
 
 interface HomeHeaderProps {
   totalApproveCount?: number;
+  numNotifyNew?: number;
   onSearch?: (text: string) => void;
   searchValue?: string;
+  onPressSearch?: () => void;
 }
 
 export const HomeHeader = ({
   totalApproveCount = 0,
+  numNotifyNew = 0,
   onSearch,
   searchValue,
+  onPressSearch,
 }: HomeHeaderProps) => {
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.headerWrapper}>
-      <View
-        style={[
-          styles.headerBg,
-          {
-            // backgroundColor: "#fff394",
-            backgroundColor: colors.white,
-            paddingTop: insets.top + spacing.xs,
-            paddingBottom: 28,
-          },
-        ]}
-      >
-        <View style={styles.headerContent}>
-          {/* Perfectly Centered Title */}
-          <View style={styles.titleContainer} pointerEvents="none">
-            <Text style={styles.titleText} color={colors.title}>
-              Thông báo duyệt
-            </Text>
-          </View>
+    <View
+      style={[
+        styles.headerWrapper,
+        {
+          paddingTop: insets.top + 5,
+          backgroundColor: colors.header as string,
+        },
+      ]}
+    >
+      <View style={styles.headerContent}>
+        <Image
+          source={Images.logo}
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 8,
+          }}
+          resizeMode="contain"
+        />
 
-          {/* Logo */}
-          <View style={styles.logoContainer}>
-            <Image
-              source={Images.splashIcon}
-              style={styles.logo}
-              resizeMode="contain"
+        {/* Perfectly Centered Title */}
+        <View style={styles.titleContainer} pointerEvents="none">
+          <Text
+            size={17}
+            weight={"700"}
+            color={colors.black}
+            style={{
+              marginTop: 5,
+            }}
+          >
+            Thông báo duyệt
+          </Text>
+
+          <Row gap={5} margin={[2, 0, 0, 5]}>
+            <Icon
+              name="circle"
+              type="material"
+              size={5}
+              color={colors.title as string}
             />
-          </View>
-
-          <Row gap={10}>
-            {/* Notification Account */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={goNotification}
-              style={styles.notifContainer}
-            >
-              <Icon
-                name="notifications-outline"
-                type="ionicon"
-                size={26}
-                color={colors.title}
-              />
-              {totalApproveCount > 0 && (
-                <View style={[styles.badge, { borderColor: colors.white }]} />
-              )}
-            </TouchableOpacity>
-
-            {/* User Info */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={goUserInfo}
-              style={styles.notifContainer}
-            >
-              <Icon name="user" type="feather" size={25} color={colors.title} />
-            </TouchableOpacity>
+            <Text size={13} weight={"700"} color={colors.title}>
+              Phân quyền duyệt của bạn
+            </Text>
           </Row>
         </View>
+
+        <Row gap={10}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={goNotification}
+            style={[
+              styles.notifContainer,
+              {
+                width: 42,
+                height: 42,
+                borderRadius: 42,
+                backgroundColor: colors.lgrayBg as string,
+              },
+            ]}
+          >
+            <Icon
+              name="notifications-outline"
+              type="ionicon"
+              size={24}
+              color={colors.title as string}
+            />
+            {numNotifyNew > 0 && (
+              <View
+                style={[
+                  styles.badge,
+                  {
+                    borderColor: colors.white as string,
+                    backgroundColor: colors.badgeRed as string,
+                  },
+                ]}
+              >
+                <Text
+                  size={10}
+                  weight={"700"}
+                  color={colors.white}
+                  style={{ lineHeight: 14 }}
+                >
+                  {numNotifyNew > 99 ? "99+" : numNotifyNew}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {/* User Info */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={goUserInfo}
+            style={[
+              styles.notifContainer,
+              {
+                width: 45,
+                height: 45,
+                borderRadius: 45,
+                backgroundColor: colors.lgrayBg as string,
+              },
+            ]}
+          >
+            <Icon
+              name="user"
+              type="feather"
+              size={22}
+              color={colors.title as string}
+            />
+          </TouchableOpacity>
+        </Row>
       </View>
 
       {/* Floating Search Bar */}
       <View style={styles.searchBarWrapper}>
-        <View style={[styles.searchBar, { backgroundColor: colors.white }]}>
-          <Icon type="feather" name="search" size={18} color="#94A3B8" />
+        <TouchableOpacity
+          activeOpacity={onPressSearch ? 0.9 : 1}
+          onPress={onPressSearch}
+          disabled={!onPressSearch}
+          style={[
+            styles.searchBar,
+            {
+              backgroundColor: colors.card as string,
+              borderColor: colors.border as string,
+            },
+          ]}
+        >
+          <Icon
+            type="feather"
+            name="search"
+            size={18}
+            color={colors.label as string}
+          />
           <Spacer horizontal size={12} />
           <TextInput
             placeholder="Tìm kiếm thông báo duyệt..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.label as string}
             value={searchValue}
             onChangeText={onSearch}
+            editable={!onPressSearch}
+            pointerEvents={onPressSearch ? "none" : "auto"}
             style={{
-              color: colors.title,
+              color: colors.title as string,
               fontSize: 14,
               flex: 1,
               height: "100%",
@@ -110,10 +186,10 @@ export const HomeHeader = ({
               type="feather"
               name="sliders"
               size={16}
-              color={colors.active}
+              color={colors.active as string}
             />
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -121,72 +197,67 @@ export const HomeHeader = ({
 
 const styles = StyleSheet.create({
   headerWrapper: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    paddingBottom: 10,
-  },
-  headerBg: {
-    width: "100%",
-    paddingHorizontal: 10,
+    paddingBottom: 8,
+    marginBottom: 10,
+    borderBottomLeftRadius: 27,
+    borderBottomRightRadius: 27,
   },
   headerContent: {
-    height: 44,
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    paddingHorizontal: 10,
   },
   titleContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: "center",
-    alignItems: "center",
+    flex: 1,
+    justifyContent: "flex-start",
+    paddingLeft: 16,
   },
   titleText: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: "600",
     letterSpacing: -0.2,
   },
-  logoContainer: {
-    zIndex: 1,
-  },
-  logo: {
-    width: 100,
-    height: 40,
-  },
   notifContainer: {
-    zIndex: 1,
-    width: 32,
-    height: 32,
     justifyContent: "center",
-    alignItems: "flex-end",
+    alignItems: "center",
+    position: "relative",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   badge: {
     position: "absolute",
-    top: 4,
-    right: -1,
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    backgroundColor: "#EF4444",
+    top: 1,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
     borderWidth: 1.5,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 3,
   },
   searchBarWrapper: {
+    marginTop: 8,
     width: "100%",
     alignItems: "center",
-    marginTop: -26,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
   },
   searchBar: {
     width: "100%",
     height: 50,
-    borderRadius: 12,
+    borderRadius: 50,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
   },
   filterIcon: {
     width: 26,

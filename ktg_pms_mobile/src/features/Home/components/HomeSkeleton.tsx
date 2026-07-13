@@ -8,16 +8,22 @@ const { width } = Dimensions.get("window");
 const MenuBlockSkeleton = ({
   width: itemWidth,
   noBorder = false,
+  colors,
 }: {
   width: number;
   noBorder?: boolean;
+  colors: any;
 }) => {
   return (
     <View
       style={[
         styles.menuBlockSkeleton,
-        { width: Math.max(0, Math.floor(itemWidth)) },
-        noBorder && { borderWidth: 0, backgroundColor: "#F8FAFC" },
+        {
+          width: Math.max(0, Math.floor(itemWidth)),
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+        },
+        noBorder && { borderWidth: 0, backgroundColor: colors.disabledBg },
       ]}
     >
       <View style={styles.iconPlaceholder}>
@@ -30,7 +36,7 @@ const MenuBlockSkeleton = ({
 };
 
 export const HomeSkeleton = () => {
-  const { spacing } = useTheme();
+  const { spacing, colors } = useTheme();
 
   const horizontalGap = 10;
   const columns = 3;
@@ -52,7 +58,7 @@ export const HomeSkeleton = () => {
   return (
     <View style={{ flex: 1 }}>
       {/* 1. Quick Access Section (Non-group types: PR, PAYMENT, PO, BUSINESSPLAN, etc.) */}
-      <View style={styles.blockGhost}>
+      <View style={[styles.blockGhost, { backgroundColor: colors.card, borderColor: colors.divider }]}>
         <View style={styles.blockHeaderSkeleton}>
           <Skeleton circle height={18} width={18} />
           <Spacer horizontal size={10} />
@@ -61,13 +67,13 @@ export const HomeSkeleton = () => {
         <View style={styles.gridContainer}>
           {/* Show PR and PO items only in Quick Access skeleton */}
           {[1, 2].map((i) => (
-            <MenuBlockSkeleton key={i} width={itemWidth} />
+            <MenuBlockSkeleton key={i} width={itemWidth} colors={colors} />
           ))}
         </View>
       </View>
 
       {/* 2. Expanded Group (SUPPLIER - Nhà cung cấp) */}
-      <View style={[styles.collapseSkeleton, { height: "auto" }]}>
+      <View style={[styles.collapseSkeleton, { height: "auto", backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.collapseHeaderSkeleton}>
           <View style={styles.headerInfo}>
             <Skeleton circle height={24} width={24} />
@@ -85,13 +91,13 @@ export const HomeSkeleton = () => {
         >
           {/* Match ~8 children in Supplier group */}
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-            <MenuBlockSkeleton key={i} width={itemWidthCollapse} noBorder />
+            <MenuBlockSkeleton key={i} width={itemWidthCollapse} noBorder colors={colors} />
           ))}
         </View>
       </View>
 
       {/* 3. Collapsed Group (BID - Duyệt gói thầu) */}
-      <View style={styles.collapseHeaderGhost}>
+      <View style={[styles.collapseHeaderGhost, { backgroundColor: colors.card, borderColor: colors.divider }]}>
         <View style={styles.headerInfo}>
           <Skeleton circle height={24} width={24} />
           <Spacer horizontal size={12} />
@@ -105,11 +111,9 @@ export const HomeSkeleton = () => {
 
 const styles = StyleSheet.create({
   blockGhost: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#F1F5F9",
     overflow: "hidden",
   },
   blockHeaderSkeleton: {
@@ -127,12 +131,10 @@ const styles = StyleSheet.create({
   },
   menuBlockSkeleton: {
     aspectRatio: 1,
-    backgroundColor: "#FFFFFF",
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     padding: 10,
   },
   iconPlaceholder: {
@@ -142,7 +144,6 @@ const styles = StyleSheet.create({
   },
   collapseHeaderGhost: {
     height: 64,
-    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -150,15 +151,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#F1F5F9",
   },
   collapseSkeleton: {
-    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     marginBottom: 10,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
   },
   collapseHeaderSkeleton: {
     flexDirection: "row",

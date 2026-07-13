@@ -32,7 +32,7 @@ export interface RefreshTokenResponse {
   };
 }
 
-interface LstPermission {
+export interface LstPermission {
   code: string;
   name: string;
   path: string;

@@ -1,17 +1,15 @@
 import { Icon } from "@rneui/base";
 import React from "react";
 import {
+  ColorValue,
+  Dimensions,
+  DimensionValue,
   StyleSheet,
   TouchableOpacity,
   View,
-  Dimensions,
-  ColorValue,
 } from "react-native";
-import { Text, Spacer } from "~/common";
-import { colors } from "~/constants/colors";
+import { Spacer, Text } from "~/common";
 import { useTheme } from "~/hooks/useTheme";
-
-const { width } = Dimensions.get("window");
 
 interface MenuBlockProps {
   title: string;
@@ -20,29 +18,30 @@ interface MenuBlockProps {
   count?: number;
   onPress?: () => void;
   columns?: number;
-  iconBackgroundColor?: ColorValue;
   iconColor?: ColorValue;
   backgroundColor?: ColorValue;
+  iconContainerColor?: ColorValue;
+  iconSize?: number;
+  index?: number;
+  total?: number;
 }
 
 export const MenuBlock = ({
   title,
   icon,
-  iconType = "feather",
+  iconType = "ionicon",
   count,
   onPress,
-  columns = 3,
-  iconBackgroundColor,
+  columns = 4,
   iconColor,
   backgroundColor,
+  iconContainerColor,
+  iconSize = 32,
+  index = 0,
+  total = 0,
 }: MenuBlockProps) => {
-  const { colors, spacing } = useTheme();
-
-  // Calculation for columns with gap
-  const horizontalGap = 10;
-  const paddingAdjustment = 10 * 2 + spacing.sm * 2; // Home padding + Block padding
-  const totalGapWidth = horizontalGap * (columns - 1);
-  const itemWidth = (width - paddingAdjustment - totalGapWidth) / columns;
+  const { colors } = useTheme();
+  const itemWidth = `${100 / columns}%`;
 
   return (
     <TouchableOpacity
@@ -51,49 +50,67 @@ export const MenuBlock = ({
       style={[
         styles.block,
         {
-          width: Math.floor(itemWidth),
-          backgroundColor: backgroundColor || colors.white,
-          borderRadius: 10,
-          padding: 10,
+          width: itemWidth as DimensionValue,
+          borderColor: colors.border,
+          // borderColor: "#64748B",
+          borderRightWidth: (index + 1) % columns === 0 ? 0 : 0.75,
+          borderBottomWidth:
+            index >= total - (total % columns || columns) ? 0 : 0.75,
         },
       ]}
     >
       <View
-        style={[
-          styles.iconContainer,
-          {
-            backgroundColor: iconBackgroundColor || "#F1F5F9",
-            borderRadius: 10,
-          },
-        ]}
+        style={{
+          backgroundColor: "#fff7dd",
+          height: 50,
+          width: 50,
+          justifyContent: "center",
+          alignItems: "center",
+          borderRadius: 14,
+          zIndex: 1,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: "#ffc325",
+          // borderColor: "#64748B",
+          //           #FFC107 hoặc #FFB703	Màu vàng đậm đặc trưng của hệ thống (Theme color).
+          // Nền bo góc của Icon	#FFF3CD hoặc #FFF7E6
+          //           fcf6cd
+
+          // fcb911
+
+          // fdae0a
+
+          // FFF7E6
+        }}
       >
         <Icon
           name={icon}
           type={iconType}
-          size={20}
-          color={iconColor || "#64748B"}
+          size={iconSize}
+          color={"#ffc325"} // iconColor || "#F29924" "#64748B" 414B5A F38A21 F38A21
         />
+
+        {/* {count !== undefined && count > 0 && (
+          <View
+            style={[styles.badge, { backgroundColor: colors.red, zIndex: 1 }]}
+          >
+            <Text size={12} weight="700" color={colors.white}>
+              {count > 99 ? "99+" : count}
+            </Text>
+          </View>
+        )} */}
       </View>
 
       <Spacer size={6} />
 
       <Text
         size={12}
-        weight="600"
-        color={colors.space}
+        weight="500"
+        color={colors.slate700}
         numberOfLines={2}
-        style={styles.title}
+        style={[styles.title, { zIndex: 1 }]}
       >
         {title}
       </Text>
-
-      {count !== undefined && count > 0 && (
-        <View style={[styles.badge, { backgroundColor: colors.red }]}>
-          <Text size={11} weight="800" color={colors.white}>
-            {count > 99 ? "99+" : count}
-          </Text>
-        </View>
-      )}
     </TouchableOpacity>
   );
 };
@@ -105,8 +122,18 @@ export const MenuGrid = ({
   children: React.ReactNode;
   marginTop?: number;
 }) => {
+  const { colors } = useTheme();
+
   return (
-    <View style={[styles.grid, { marginTop, gap: 10, rowGap: 10 }]}>
+    <View
+      style={[
+        styles.grid,
+        {
+          marginTop,
+          backgroundColor: colors.card,
+        },
+      ]}
+    >
       {children}
     </View>
   );
@@ -117,14 +144,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "flex-start",
+    // borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 8,
+    overflow: "hidden",
   },
   block: {
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
-    aspectRatio: 1,
-    borderWidth: 1,
-    borderColor: colors.border,
+    paddingVertical: 10,
   },
   iconContainer: {
     width: "60%",
@@ -133,22 +161,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
+    marginTop: 4,
     textAlign: "center",
-    paddingHorizontal: 2,
-    lineHeight: 13,
+    paddingHorizontal: 4,
   },
   badge: {
     position: "absolute",
     top: -6,
-    right: -3,
-    minWidth: 27,
-    height: 27,
-    borderRadius: 27,
+    right: -10,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 4,
-    borderWidth: 1.5,
-    borderColor: "#FFF",
+    paddingHorizontal: 5,
     zIndex: 10,
   },
 });

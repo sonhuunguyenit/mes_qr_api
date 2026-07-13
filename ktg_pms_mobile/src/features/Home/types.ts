@@ -5,9 +5,12 @@ export interface ModuleItem {
   subtitle?: string;
   count?: number;
   icon?: string;
-  bgColor?: ColorValue;
-  iconColor?: ColorValue;
   type?: string;
+  iconType?: string;
+  iconSize?: number;
+  iconContainerColor?: ColorValue;
+  iconColor?: ColorValue;
+  permissionCode?: string;
 }
 
 export interface Module {
@@ -16,36 +19,45 @@ export interface Module {
   subtitle?: string;
   icon?: string;
   iconType?: string;
+  iconSize?: number;
   iconColor?: ColorValue;
-  bgColor?: ColorValue;
+  iconContainerColor?: ColorValue;
   count?: number;
   badgeText?: string;
   isGroup?: boolean;
   items?: ModuleItem[];
   forceExpand?: boolean;
+  permissionCode?: string;
+  type?: string;
 }
 
-export type ApproveType =
-  | "PR"
-  | "SUPPLIER"
-  | "SAP_CODE"
-  | "RUSL"
-  | "RUSC"
-  | "LS"
-  | "LSS"
-  | "SUPPLIER_UPGRADE"
-  | "LSMH"
-  | "BID"
-  | "EVALUATE_RESULT_CAPACITY"
-  | "EVALUATE_RESULT_TRADE"
-  | "SUPPLIER_WIN_BID"
-  | "FINISH_BID"
-  | "PAYMENT"
-  | "CONTRACT"
-  | "CONTRACT_APPENDIX"
-  | "PO"
-  | "BUSINESSPLAN"
-  | "APPROVED_RECOMMEND_PURCHASE";
+export enum ApproveFlowCode {
+  PR = "PR",
+  SUPPLIER = "SUPPLIER",
+  SAP_CODE = "SAP_CODE",
+  RUSL = "RUSL",
+  RUSC = "RUSC",
+  LS = "LS",
+  LSS = "LSS",
+  SUPPLIER_UPGRADE = "SUPPLIER_UPGRADE",
+  LSMH = "LSMH",
+  BID = "BID",
+  EVALUATE_RESULT_CAPACITY = "EVALUATE_RESULT_CAPACITY",
+  EVALUATE_RESULT_TRADE = "EVALUATE_RESULT_TRADE",
+  SUPPLIER_WIN_BID = "SUPPLIER_WIN_BID",
+  FINISH_BID = "FINISH_BID",
+  PAYMENT = "PAYMENT",
+  CONTRACT = "CONTRACT",
+  CONTRACT_APPENDIX = "CONTRACT_APPENDIX",
+  PO = "PO",
+  BUSINESSPLAN = "BUSINESSPLAN",
+  APPROVED_RECOMMEND_PURCHASE = "APPROVED_RECOMMEND_PURCHASE",
+  USAGE_DEMAND = "USAGE_DEMAND",
+  USAGE_DEMAND_SUB = "USAGE_DEMAND_SUB",
+  REPAIR_DEMAND = "REPAIR_DEMAND",
+  SUPPLIER_POTENTIAL = "SUPPLIER_POTENTIAL",
+  MATERIAL_APPROVAL = "MATERIAL_APPROVAL",
+}
 
 export interface ApproveItem {
   id: string;

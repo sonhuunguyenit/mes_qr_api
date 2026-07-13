@@ -1,7 +1,8 @@
 import moment from "moment";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo } from "react";
 import { ScrollView, StyleSheet } from "react-native";
 import { Collapse, Column, Row, Spacer, Table, Text } from "~/common";
+import globalStyle from "~/styles/global-style";
 import { useSheet } from "~/contexts/SheetContext";
 import {
   PO_FUNCTION_DISPLAY,
@@ -17,14 +18,9 @@ import {
   POItemData,
   POPartner,
 } from "~/services/po/po.type";
-import { POFieldItem } from "../components/POFieldItem";
+import { ColumnInfo } from "~/components/ColumnInfo";
 import POContactDetailSheet from "../sheets/POContactDetailSheet";
-import POContactTableFilterSheet from "../sheets/POContactTableFilterSheet";
-import POItemTableFilterSheet, {
-  POItemTableFilters,
-} from "../sheets/POItemTableFilterSheet";
 import POPartnerDetailSheet from "../sheets/POPartnerDetailSheet";
-import POPartnerTableFilterSheet from "../sheets/POPartnerTableFilterSheet";
 
 interface PODetailInfoTabProps {
   data: POItemData & Partial<PODetailData>;
@@ -44,81 +40,24 @@ const PODetailInfoTab = ({
   const { colors } = useTheme();
   const { openSheet, closeSheet } = useSheet();
 
-  const [partnerFilters, setPartnerFilters] = useState({
-    functionCode: "",
-    functionName: "",
-    partnerType: "",
-    partnerCode: "",
-    partnerName: "",
-  });
-
-  const [contactFilters, setContactFilters] = useState({
-    code: "",
-    name: "",
-    position: "",
-    costCenter: "",
-    phone: "",
-  });
-
-  const [itemFilters, setItemFilters] = useState<POItemTableFilters>({
-    itemClosed: "",
-    itemDeleted: "",
-    itemNo: "",
-    acccate: "",
-    category: "",
-    materialCode: "",
-    matGroup: "",
-    extMatGr: "",
-    assetCode: "",
-    serviceCode: "",
-    shortText: "",
-    quantityUptoPO: "",
-    uom: "",
-    deliveryDate: undefined,
-    grossPrice: "",
-    currencyRfq: "",
-    perRfq: "",
-    pricePo: "",
-    currencyPo: "",
-    perPo: "",
-    opu: "",
-    fc: "",
-    fp: "",
-    ci: "",
-    ciName: "",
-    budgetPeriod: "",
-    valueItem: "",
-    totalBudget: "",
-    storageLocation: "",
-    valType: "",
-    rfqCode: "",
-    rfqItem: "",
-    prCode: "",
-    prItem: "",
-  });
-
   const formatNumberValue = (val: any) => {
     if (!val && val !== 0) return "0";
     return String(val).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   };
 
   const totalValue = useMemo(() => {
-    let rawValue = 0;
-    if (data.totalPO) {
-      rawValue = Number(data.totalPO);
-    } else {
-      rawValue = (data.lstItemPo || []).reduce((sum: number, item: any) => {
-        return (
-          sum +
-          (item.totalPrice ||
-            item.netValue ||
-            (item.quantityUptoPO || item.quantity || 0) *
-              (item.grossPrice || item.netPrice || 0))
-        );
-      }, 0);
-    }
-    return formatNumberValue(rawValue);
-  }, [data.totalPO, data.lstItemPo]);
+    return formatNumberValue(data.totalPO || 0);
+  }, [data.totalPO]);
+
+  const totalGrossValue = useMemo(() => {
+    return formatNumberValue(data.totalPoGrossPrice || 0);
+  }, [data.totalPoGrossPrice]);
+
+  const totalQuantityUptoPO = useMemo(() => {
+    return (data.lstItemPo || []).reduce((sum, item) => {
+      return sum + (Number(item.quantityUptoPO) || 0);
+    }, 0);
+  }, [data.lstItemPo]);
 
   const getItemOPUName = (item: any) => {
     return (
@@ -127,36 +66,6 @@ const PODetailInfoTab = ({
       "---"
     );
   };
-
-  const handleOpenPartnerFilter = useCallback(() => {
-    openSheet(
-      <POPartnerTableFilterSheet
-        initialFilters={partnerFilters}
-        onApply={setPartnerFilters}
-        onClose={closeSheet}
-      />,
-    );
-  }, [openSheet, partnerFilters, closeSheet]);
-
-  const handleOpenContactFilter = useCallback(() => {
-    openSheet(
-      <POContactTableFilterSheet
-        initialFilters={contactFilters}
-        onApply={setContactFilters}
-        onClose={closeSheet}
-      />,
-    );
-  }, [openSheet, contactFilters, closeSheet]);
-
-  const handleOpenItemFilter = useCallback(() => {
-    openSheet(
-      <POItemTableFilterSheet
-        initialFilters={itemFilters}
-        onApply={setItemFilters}
-        onClose={closeSheet}
-      />,
-    );
-  }, [openSheet, itemFilters, closeSheet]);
 
   const onShowPartnerDetail = useCallback(
     (partner: POPartner) => {
@@ -170,6 +79,36 @@ const PODetailInfoTab = ({
       openSheet(<POContactDetailSheet contact={contact} />);
     },
     [openSheet],
+  );
+
+  const handleRowDoublePressPartner = useCallback(
+    (index: number) => {
+      const partner = data.lstPartner?.[index];
+      if (partner) {
+        onShowPartnerDetail(partner);
+      }
+    },
+    [data.lstPartner, onShowPartnerDetail],
+  );
+
+  const handleRowDoublePressContact = useCallback(
+    (index: number) => {
+      const contact = data.lstMenber?.[index];
+      if (contact) {
+        onShowContactDetail(contact);
+      }
+    },
+    [data.lstMenber, onShowContactDetail],
+  );
+
+  const handleRowDoublePressItem = useCallback(
+    (index: number) => {
+      const item = data.lstItemPo?.[index];
+      if (item) {
+        onShowItemDetail?.(item);
+      }
+    },
+    [data.lstItemPo, onShowItemDetail],
   );
 
   const referenceSourceName =
@@ -187,34 +126,68 @@ const PODetailInfoTab = ({
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={globalStyle.scrollContainerDetail}
     >
       {/* 1. Tham chiếu */}
-      <Collapse title="I. THAM CHIẾU" collapsible defaultExpanded={true}>
+      <Collapse
+        title="I. Tham chiếu"
+        collapsible
+        containerStyle={globalStyle.collapseContainer}
+      >
         <Column gap={12} style={styles.sectionContent}>
           <Row full gap={16}>
-            <POFieldItem label="Nguồn Tham Chiếu" value={referenceSourceName} />
+            <ColumnInfo label="Nguồn Tham Chiếu" value={referenceSourceName} />
           </Row>
-          <POFieldItem
+          <ColumnInfo
             label="Chứng từ tham chiếu"
+            value={
+              data.referenceDocumentCode ||
+              data.referenceDocumentTitle ||
+              data.referenceDocumentName ||
+              (data.referenceSourceName === "NONE"
+                ? "---"
+                : data.referenceSourceName)
+            }
+            full
+          />
+          <ColumnInfo
+            label="Tên chứng từ tham chiếu"
             value={
               data.referenceSourceName === "NONE"
                 ? "---"
                 : data.referenceSourceName
             }
-            fullWidth
+            full
           />
+          <Row full gap={16}>
+            <ColumnInfo
+              label="Số Phụ lục Hợp đồng"
+              value={data.contractAnnexNumberDisplay || "---"}
+            />
+            <ColumnInfo
+              label="Ngày tạo PLHĐ"
+              value={
+                data.contractAnnexNumberDate
+                  ? moment(data.contractAnnexNumberDate).format("DD/MM/YYYY")
+                  : "---"
+              }
+            />
+          </Row>
         </Column>
       </Collapse>
 
-      <Spacer size={12} />
+      <Spacer size={10} />
 
       {/* 2. Thông Tin Chung */}
-      <Collapse title="II. THÔNG TIN CHUNG" collapsible defaultExpanded={false}>
+      <Collapse
+        title="II. Thông tin chung"
+        collapsible
+        containerStyle={globalStyle.collapseContainer}
+      >
         <Column gap={12} style={styles.sectionContent}>
           <Row full gap={16}>
-            <POFieldItem label="Mã PO" value={data.code} />
-            <POFieldItem
+            <ColumnInfo label="Mã PO" value={data.code} />
+            <ColumnInfo
               label="Loại PO"
               value={
                 (data.typePO ? PO_TYPE_DISPLAY[data.typePO] : null) ??
@@ -223,22 +196,22 @@ const PODetailInfoTab = ({
               }
             />
           </Row>
-          <POFieldItem
+          <ColumnInfo
             label="Công ty mua hàng"
             value={data.companyName || "---"}
-            fullWidth
+            full
           />
-          <POFieldItem
+          <ColumnInfo
             label="Plant"
             value={
               data.plantCode && data.plantName
                 ? `${data.plantCode} - ${data.plantName}`
                 : data.plantName || data.plantCode || "---"
             }
-            fullWidth
+            full
           />
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Nhóm mua hàng"
               value={
                 data.purchasingGroupCode && data.purchasingGroupName
@@ -248,7 +221,7 @@ const PODetailInfoTab = ({
                     "---"
               }
             />
-            <POFieldItem
+            <ColumnInfo
               label="Tổ chức mua hàng"
               value={
                 data.purchasingOrgCode && data.purchasingOrgName
@@ -258,7 +231,7 @@ const PODetailInfoTab = ({
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Ngày tạo đơn hàng"
               value={
                 data.createdAt
@@ -266,73 +239,66 @@ const PODetailInfoTab = ({
                   : "---"
               }
             />
-            <POFieldItem label="File chứng từ" value={data.fileAttachment} />
+            <ColumnInfo label="File chứng từ" value={data.fileAttachment} />
           </Row>
         </Column>
       </Collapse>
 
-      <Spacer size={12} />
+      <Spacer size={10} />
 
       {/* 3. Thông tin NCC */}
-      <Collapse title="III. THÔNG TIN NCC" collapsible defaultExpanded={false}>
+      <Collapse
+        title="III. Thông tin NCC"
+        collapsible
+        containerStyle={globalStyle.collapseContainer}
+      >
         <Column gap={12} style={styles.sectionContent}>
-          <POFieldItem
-            label="Nhà cung cấp"
-            value={data.supplierName}
-            fullWidth
-          />
-          <POFieldItem
+          <ColumnInfo label="Nhà cung cấp" value={data.supplierName} full />
+          <ColumnInfo
             label="Điều kiện thanh toán"
             value={data.paymentTermName}
-            fullWidth
+            full
           />
           <Row full gap={16}>
-            <POFieldItem label="Đơn vị tiền tệ" value={data.currencyName} />
-            <POFieldItem
+            <ColumnInfo label="Đơn vị tiền tệ" value={data.currencyName} />
+            <ColumnInfo
               label="GR Based IV"
               value={data.grbInv ? "Có" : "Không"}
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Tỷ giá"
               value={data.excRate ?? data.exchangeRate}
             />
-            <POFieldItem
+            <ColumnInfo
               label="Schema group"
               value={data.supplierSchemaName ?? data.schemaGroupName}
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
-              label="Email nhà cung cấp"
-              value={data.supplierEmail}
-            />
-            <POFieldItem label="SĐT" value={data.supplierPhone} />
+            <ColumnInfo label="Email nhà cung cấp" value={data.supplierEmail} />
+            <ColumnInfo label="SĐT" value={data.supplierPhone} />
           </Row>
-          <POFieldItem label="Fax" value={data.supplierFax} fullWidth />
-          <POFieldItem label="Địa chỉ" value={data.supplierAddress} fullWidth />
+          <ColumnInfo label="Fax" value={data.supplierFax} full />
+          <ColumnInfo label="Địa chỉ" value={data.supplierAddress} full />
 
           <Row full gap={16}>
-            <POFieldItem label="Số tài khoản" value={data.supplierBankNumber} />
-            <POFieldItem
+            <ColumnInfo label="Số tài khoản" value={data.supplierBankNumber} />
+            <ColumnInfo
               label="Chủ tài khoản"
               value={data.supplierBankUsername}
             />
           </Row>
-          <POFieldItem
-            label="Ngân hàng"
-            value={data.supplierBankName}
-            fullWidth
-          />
-          <POFieldItem
+          <ColumnInfo label="Ngân hàng" value={data.supplierBankName} full />
+          <ColumnInfo
             label="Chi nhánh"
             value={data.supplierBankBranchName}
-            fullWidth
+            full
           />
           <Row full gap={16}>
-            <POFieldItem label="Swift Code" value={data.supplierSwiftCode} />
-            <POFieldItem label="IBAN" value={data.supplierIban} />
+            <ColumnInfo label="Swift Code" value={data.supplierSwiftCode} />
+            <ColumnInfo label="IBAN" value={data.supplierIban} />
           </Row>
 
           <Table
@@ -342,86 +308,39 @@ const PODetailInfoTab = ({
               "Loại mã đối tác",
               "Mã đối tác",
               "Tên đối tác",
-              <Table.ButtonFilterTable
-                key="partner-filter"
-                onPress={handleOpenPartnerFilter}
-              />,
             ]}
-            rows={(data.lstPartner || [])
-              .filter((p) => {
-                if (!p.partnerCode && !p.partnerName) return false;
-                const matchFunc =
-                  !partnerFilters.functionCode ||
-                  p.partnerFunctionCode
-                    ?.toLowerCase()
-                    .includes(partnerFilters.functionCode.toLowerCase());
-                const matchFuncName =
-                  !partnerFilters.functionName ||
-                  (
-                    PO_FUNCTION_DISPLAY[p.partnerFunctionCode] ??
-                    p.partnerFunctionCode
-                  )
-                    ?.toLowerCase()
-                    .includes(partnerFilters.functionName.toLowerCase());
-                const matchType =
-                  !partnerFilters.partnerType ||
-                  p.partnerType
-                    ?.toLowerCase()
-                    .includes(partnerFilters.partnerType.toLowerCase());
-                const matchCode =
-                  !partnerFilters.partnerCode ||
-                  p.partnerCode
-                    ?.toLowerCase()
-                    .includes(partnerFilters.partnerCode.toLowerCase());
-                const matchName =
-                  !partnerFilters.partnerName ||
-                  p.partnerName
-                    ?.toLowerCase()
-                    .includes(partnerFilters.partnerName.toLowerCase());
-                return (
-                  matchFunc &&
-                  matchFuncName &&
-                  matchType &&
-                  matchCode &&
-                  matchName
-                );
-              })
-              .map((p: POPartner, idx: number) => ({
-                cells: [
+            rows={(data.lstPartner || []).map((p: POPartner) => ({
+              cells: [
+                p.partnerFunctionCode,
+                PO_FUNCTION_DISPLAY[p.partnerFunctionCode] ??
                   p.partnerFunctionCode,
-                  PO_FUNCTION_DISPLAY[p.partnerFunctionCode] ??
-                    p.partnerFunctionCode,
-                  PO_PARTNER_TYPE_DISPLAY[p.partnerType] ?? p.partnerType,
-                  p.partnerCode,
-                  p.partnerName,
-                  <Table.EyeDetailRow
-                    key={`view-${idx}`}
-                    onPress={() => onShowPartnerDetail(p)}
-                  />,
-                ],
-              }))}
-            columnWidths={[150, 150, 150, 150, 200, 60]}
-            stickyColumn="right"
+                PO_PARTNER_TYPE_DISPLAY[p.partnerType] ?? p.partnerType,
+                p.partnerCode,
+                p.partnerName,
+              ],
+            }))}
+            columnWidths={[150, 150, 150, 150, 200]}
+            onRowDoublePress={handleRowDoublePressPartner}
             horizontalScroll
-            containerStyle={{ marginHorizontal: 16 }}
+            containerStyle={{ width: "100%" }}
           />
         </Column>
       </Collapse>
 
-      <Spacer size={12} />
+      <Spacer size={10} />
 
       {/* 4. Thông tin ghi chú */}
       <Collapse
-        title="IV. THÔNG TIN GHI CHÚ"
+        title="IV. Thông tin ghi chú"
         collapsible
-        defaultExpanded={false}
+        containerStyle={globalStyle.collapseContainer}
       >
         <Column gap={12} style={styles.sectionContent}>
-          <POFieldItem label="Header text" value={data.headerText} fullWidth />
-          <POFieldItem label="Header note" value={data.headerNote} fullWidth />
+          <ColumnInfo label="Header text" value={data.headerText} full />
+          <ColumnInfo label="Header note" value={data.headerNote} full />
           <Row full gap={16}>
-            <POFieldItem label="Pricing types" value={data.pricingTypes} />
-            <POFieldItem
+            <ColumnInfo label="Pricing types" value={data.pricingTypes} />
+            <ColumnInfo
               label="Ngày hoàn thành"
               value={
                 data.completeDate
@@ -431,7 +350,7 @@ const PODetailInfoTab = ({
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Ngày thanh toán"
               value={
                 data.paymentsDate
@@ -439,122 +358,132 @@ const PODetailInfoTab = ({
                   : "---"
               }
             />
-            <POFieldItem label="Term of delivery" value={data.termDeli} />
+            <ColumnInfo label="Term of delivery" value={data.termDeli} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="Mua lẻ" value={data.retail} />
-            <POFieldItem
+            <ColumnInfo label="Mua lẻ" value={data.retail} />
+            <ColumnInfo
               label="Số hợp đồng ngoại thương"
               value={data.numberForeignTradeContract ?? data.contractNumber}
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="Guarantees" value={data.guarantees} />
-            <POFieldItem
+            <ColumnInfo label="Guarantees" value={data.guarantees} />
+            <ColumnInfo
               label="Contract riders (clauses)"
               value={data.contractRiders}
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="Asset" value={data.asset} />
-            <POFieldItem
+            <ColumnInfo label="Asset" value={data.asset} />
+            <ColumnInfo
               label="Other contractual stipulations"
               value={data.otherContractualStipulations}
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="Inbound Delivery" value={data.inboundDeli} />
-            <POFieldItem
-              label="Vendor memo (general)"
-              value={data.vendorMemo}
-            />
+            <ColumnInfo label="Inbound Delivery" value={data.inboundDeli} />
+            <ColumnInfo label="Vendor memo (general)" value={data.vendorMemo} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="CUP" value={data.cup} />
-            <POFieldItem label="CIG" value={data.cig} />
+            <ColumnInfo label="CUP" value={data.cup} />
+            <ColumnInfo label="CIG" value={data.cig} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="MGO" value={data.mgo} />
-            <POFieldItem label="Size/Loại" value={data.size} />
+            <ColumnInfo label="MGO" value={data.mgo} />
+            <ColumnInfo label="Size/Loại" value={data.size} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Orginin/Xuất sứ"
               value={data.orginin ?? data.origin}
             />
-            <POFieldItem
+            <ColumnInfo
               label="Manufacturer/Nhà sản xuất"
               value={data.manufacturer}
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="Quality" value={data.quality} />
-            <POFieldItem label="Chất lượng" value={data.quality2} />
+            <ColumnInfo label="Quality" value={data.quality} />
+            <ColumnInfo label="Chất lượng" value={data.quality2} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="Trade terms" value={data.tradeTerms} />
-            <POFieldItem label="Tiêu chuẩn" value={data.standard} />
+            <ColumnInfo label="Trade terms" value={data.tradeTerms} />
+            <ColumnInfo label="Tiêu chuẩn" value={data.standard} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="Packing" value={data.packing} />
-            <POFieldItem label="Đóng gói" value={data.pack} />
+            <ColumnInfo label="Packing" value={data.packing} />
+            <ColumnInfo label="Đóng gói" value={data.pack} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="Marking" value={data.marking} />
-            <POFieldItem label="Kí hiệu" value={data.symbol} />
+            <ColumnInfo label="Marking" value={data.marking} />
+            <ColumnInfo label="Kí hiệu" value={data.symbol} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="Shipment time" value={data.shipmentTime} />
-            <POFieldItem label="Cảng dở" value={data.badPort} />
+            <ColumnInfo label="Shipment time" value={data.shipmentTime} />
+            <ColumnInfo label="Cảng dở" value={data.badPort} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Partical Shipment"
               value={data.particalShipment}
             />
-            <POFieldItem
+            <ColumnInfo
               label="Transhipment/Chuyển tải"
               value={data.transhipment}
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Notice of Shipment"
               value={data.noticeOfShipment}
             />
-            <POFieldItem label="Payment" value={data.payment} />
+            <ColumnInfo label="Payment" value={data.payment} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Documents requried"
               value={data.documentsRequried ?? data.documentsRequired}
             />
-            <POFieldItem label="Nơi nhận hàng" value={data.receivingDelivery} />
+            <ColumnInfo label="Nơi nhận hàng" value={data.receivingDelivery} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem label="Tel" value={data.tel} />
-            <POFieldItem label="Fax" value={data.fax} />
+            <ColumnInfo label="Tel" value={data.tel} />
+            <ColumnInfo label="Fax" value={data.fax} />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Signed Commercial Invoice"
               value={data.signedCommercialInvoice}
             />
-            <POFieldItem
+            <ColumnInfo
               label="Detail Packing List"
               value={data.detailPackingList}
             />
           </Row>
+          <Row full gap={16}>
+            <ColumnInfo
+              label="Quality + Coil weight"
+              value={data.coilWeight || "---"}
+            />
+            <ColumnInfo
+              label="Chất lượng: + Trọng lượng"
+              value={data.coilWeight2 || "---"}
+            />
+          </Row>
+          <Row full gap={16}>
+            <ColumnInfo label="Standard 2" value={data.standard2 || "---"} />
+          </Row>
         </Column>
       </Collapse>
 
-      <Spacer size={12} />
+      <Spacer size={10} />
 
       {/* 5. Thông tin liên lạc */}
       <Collapse
-        title="V. THÔNG TIN LIÊN LẠC"
+        title="V. Thông tin liên lạc"
         collapsible
-        defaultExpanded={false}
+        containerStyle={globalStyle.collapseContainer}
       >
         <Table
           columns={[
@@ -563,77 +492,37 @@ const PODetailInfoTab = ({
             "Vị trí",
             "Cost center",
             "Số điện thoại",
-            <Table.ButtonFilterTable
-              key="contact-filter"
-              onPress={handleOpenContactFilter}
-            />,
           ]}
-          rows={(data.lstMenber || [])
-            .filter((c) => {
-              if (!c.employeeCode && !c.employeeName) return false;
-              const matchCode =
-                !contactFilters.code ||
-                c.employeeCode
-                  ?.toLowerCase()
-                  .includes(contactFilters.code.toLowerCase());
-              const matchName =
-                !contactFilters.name ||
-                c.employeeName
-                  ?.toLowerCase()
-                  .includes(contactFilters.name.toLowerCase());
-              const matchPos =
-                !contactFilters.position ||
-                (c.positionName ?? c.position)
-                  ?.toLowerCase()
-                  .includes(contactFilters.position.toLowerCase());
-              const matchCost =
-                !contactFilters.costCenter ||
-                c.costCenter
-                  ?.toLowerCase()
-                  .includes(contactFilters.costCenter.toLowerCase());
-              const matchPhone =
-                !contactFilters.phone ||
-                (c.phone ?? c.phoneNumber)
-                  ?.toLowerCase()
-                  .includes(contactFilters.phone.toLowerCase());
-              return (
-                matchCode && matchName && matchPos && matchCost && matchPhone
-              );
-            })
-            .map((c: POContact, idx: number) => ({
-              cells: [
-                c.employeeCode,
-                c.employeeName,
-                c.positionName ?? c.position,
-                c.costCenter,
-                c.phone ?? c.phoneNumber,
-                <Table.EyeDetailRow
-                  key={`view-${idx}`}
-                  onPress={() => onShowContactDetail(c)}
-                />,
-              ],
-            }))}
-          columnWidths={[150, 200, 150, 150, 150, 60]}
-          stickyColumn="right"
+          rows={(data.lstMenber || []).map((c: POContact) => ({
+            cells: [
+              c.employeeCode,
+              c.employeeName,
+              c.positionName ?? c.position,
+              c.costCenter,
+              c.phone ?? c.phoneNumber,
+            ],
+          }))}
+          columnWidths={[150, 200, 150, 150, 150]}
+          onRowDoublePress={handleRowDoublePressContact}
           horizontalScroll
         />
       </Collapse>
 
-      <Spacer size={12} />
+      <Spacer size={10} />
 
       {/* 6. Dữ liệu khách hàng */}
       <Collapse
-        title="VI. DỮ LIỆU KHÁCH HÀNG"
+        title="VI. Dữ liệu khách hàng"
         collapsible
-        defaultExpanded={false}
+        containerStyle={globalStyle.collapseContainer}
       >
         <Column gap={12} style={styles.sectionContent}>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Số phiếu cân"
               value={data.customerData?.numberVotes ?? data.numberVotes}
             />
-            <POFieldItem
+            <ColumnInfo
               label="Ngày hoàn thành"
               value={
                 (data.customerData?.completeDateCustomer ??
@@ -647,7 +536,7 @@ const PODetailInfoTab = ({
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Ngày thanh toán"
               value={
                 (data.customerData?.paymentDateCustomer ??
@@ -659,7 +548,7 @@ const PODetailInfoTab = ({
                   : "---"
               }
             />
-            <POFieldItem
+            <ColumnInfo
               label="Mua lẻ"
               value={
                 (data.customerData?.isRetail ?? data.contractAnnexPaid)
@@ -669,24 +558,24 @@ const PODetailInfoTab = ({
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Order"
               value={data.customerData?.order ?? data.order}
             />
-            <POFieldItem
+            <ColumnInfo
               label="Notification"
               value={data.customerData?.notification ?? data.notification}
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Số hợp đồng ngoại thương"
               value={
                 data.customerData?.numberForeignTradeContractCustomer ??
                 data.numberForeignTradeContractCustomer
               }
             />
-            <POFieldItem
+            <ColumnInfo
               label="Ngày NCC giao hàng"
               value={
                 (data.customerData?.deliSupplierDate ?? data.deliSupplierDate)
@@ -699,11 +588,11 @@ const PODetailInfoTab = ({
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Vùng"
               value={data.customerData?.region ?? data.region}
             />
-            <POFieldItem
+            <ColumnInfo
               label="Số hợp đồng bảo hiểm"
               value={
                 data.customerData?.insuranceContractNumber ??
@@ -712,11 +601,11 @@ const PODetailInfoTab = ({
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Tỷ lệ lẫn"
               value={data.customerData?.mixtureRatio ?? data.mixtureRatio}
             />
-            <POFieldItem
+            <ColumnInfo
               label="Loại xe"
               value={data.customerData?.vehicleType ?? data.vehicleType}
             />
@@ -724,31 +613,31 @@ const PODetailInfoTab = ({
         </Column>
       </Collapse>
 
-      <Spacer size={12} />
+      <Spacer size={10} />
 
       {/* 7. Thông tin vận chuyển */}
       <Collapse
-        title="VII. THÔNG TIN VẬN CHUYỂN"
+        title="VII. Thông tin vận chuyển"
         collapsible
-        defaultExpanded={false}
+        containerStyle={globalStyle.collapseContainer}
       >
         <Column gap={12} style={styles.sectionContent}>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Điều khoản thương mại"
               value={data.incotermName}
             />
-            <POFieldItem
+            <ColumnInfo
               label="Phiên bản Incoterm"
               value={data.incotermVersionName}
             />
           </Row>
           <Row full gap={16}>
-            <POFieldItem
+            <ColumnInfo
               label="Địa điểm áp dụng Incoterm 1"
               value={data.incotermLocation1}
             />
-            <POFieldItem
+            <ColumnInfo
               label="Địa điểm áp dụng Incoterm 2"
               value={data.incotermLocation2}
             />
@@ -756,22 +645,28 @@ const PODetailInfoTab = ({
         </Column>
       </Collapse>
 
-      <Spacer size={12} />
+      <Spacer size={16} />
 
       {/* 8. Danh sách Items của PO */}
       <Collapse
-        title="VIII. DANH SÁCH ITEMS CỦA PO"
+        title="VIII. Danh sách Items của PO"
         collapsible
-        defaultExpanded={false}
+        containerStyle={globalStyle.collapseContainer}
       >
-        <Row full justify="flex-end" margin={[10, 0]}>
+        <Column full align="flex-end" margin={[10, 0]}>
           <Text bold>
             Trị giá PO:{" "}
-            <Text color={colors.primary} bold>
-              {totalValue}VNĐ
+            <Text color={colors.active} bold>
+              {totalGrossValue} {data.currencyCode || "VNĐ"}
             </Text>
           </Text>
-        </Row>
+          <Text bold>
+            Trị giá PO có phí:{" "}
+            <Text color={colors.active} bold>
+              {totalValue} {data.currencyCode || "VNĐ"}
+            </Text>
+          </Text>
+        </Column>
 
         <Table
           columns={[
@@ -808,279 +703,81 @@ const PODetailInfoTab = ({
             "Kỳ ngân sách",
             "Ngân sách Item",
             "Ngân sách",
+            "Dung sai giao thiếu (%)",
+            "Dung sai giao thừa (%)",
             "Vị trí kho hàng",
             "ValType",
             "Rfq",
             "Item Rfq",
             "PR",
             "Item PR",
-            <Table.ButtonFilterTable
-              key="item-filter"
-              onPress={handleOpenItemFilter}
-            />,
           ]}
-          rows={(data.lstItemPo || [])
-            .filter((item: any) => {
-              const matchClosed =
-                !itemFilters.itemClosed ||
-                (item.itemClosed || "")
-                  .toLowerCase()
-                  .includes(itemFilters.itemClosed.toLowerCase());
-              const matchDeleted =
-                !itemFilters.itemDeleted ||
-                (item.itemDeleted || "")
-                  .toLowerCase()
-                  .includes(itemFilters.itemDeleted.toLowerCase());
-              const matchItemNo =
-                !itemFilters.itemNo ||
-                (item.itemLine || item.itemNo || "")
-                  .toLowerCase()
-                  .includes(itemFilters.itemNo.toLowerCase());
-              const matchAccCate =
-                !itemFilters.acccate ||
-                (
-                  item.acccateName ||
-                  item.accountAssignment ||
-                  item.acccate ||
-                  ""
-                )
-                  .toLowerCase()
-                  .includes(itemFilters.acccate.toLowerCase());
-              const matchCategory =
-                !itemFilters.category ||
-                (item.itemcateName || item.itemCategory || "")
-                  .toLowerCase()
-                  .includes(itemFilters.category.toLowerCase());
-              const matchMaterial =
-                !itemFilters.materialCode ||
-                (item.materialCode || "")
-                  .toLowerCase()
-                  .includes(itemFilters.materialCode.toLowerCase());
-              const matchMatGroup =
-                !itemFilters.matGroup ||
-                (item.materialGroupName || item.materialGroupCode || "")
-                  .toLowerCase()
-                  .includes(itemFilters.matGroup.toLowerCase());
-              const matchExtMatGr =
-                !itemFilters.extMatGr ||
-                (
-                  item.extMatGrName ||
-                  item.externalMaterialGroupName ||
-                  item.externalMaterialGroupCode ||
-                  ""
-                )
-                  .toLowerCase()
-                  .includes(itemFilters.extMatGr.toLowerCase());
-              const matchAsset =
-                !itemFilters.assetCode ||
-                (item.assetCode || "")
-                  .toLowerCase()
-                  .includes(itemFilters.assetCode.toLowerCase());
-              const matchService =
-                !itemFilters.serviceCode ||
-                (item.serviceCode || "")
-                  .toLowerCase()
-                  .includes(itemFilters.serviceCode.toLowerCase());
-              const matchShortText =
-                !itemFilters.shortText ||
-                (item.shortText || item.materialName || "")
-                  .toLowerCase()
-                  .includes(itemFilters.shortText.toLowerCase());
-              const matchQuantity =
-                !itemFilters.quantityUptoPO ||
-                String(item.quantityUptoPO || "")
-                  .toLowerCase()
-                  .includes(itemFilters.quantityUptoPO.toLowerCase());
-              const matchUom =
-                !itemFilters.uom ||
-                (
-                  item.uomCode ||
-                  item.ounName ||
-                  item.unitName ||
-                  item.uom ||
-                  ""
-                )
-                  .toLowerCase()
-                  .includes(itemFilters.uom.toLowerCase());
-              const matchDeliveryDate =
-                !itemFilters.deliveryDate ||
-                (item.deliveryDate || item.expectedDeliveryDate
-                  ? moment(
-                      item.deliveryDate || item.expectedDeliveryDate,
-                    ).isSame(moment(itemFilters.deliveryDate), "day")
-                  : false);
-              const matchGrossPrice =
-                !itemFilters.grossPrice ||
-                String(item.grossPrice || item.rfqPrice || "")
-                  .toLowerCase()
-                  .includes(itemFilters.grossPrice.toLowerCase());
-              const matchCurrencyRfq =
-                !itemFilters.currencyRfq ||
-                (item.currencyName || item.rfqCurrency || "")
-                  .toLowerCase()
-                  .includes(itemFilters.currencyRfq.toLowerCase());
-              const matchPerRfq =
-                !itemFilters.perRfq ||
-                String(item.per || item.rfqPer || "")
-                  .toLowerCase()
-                  .includes(itemFilters.perRfq.toLowerCase());
-              const matchPricePo =
-                !itemFilters.pricePo ||
-                String(item.pricePo || item.grossPrice || item.netPrice || "")
-                  .toLowerCase()
-                  .includes(itemFilters.pricePo.toLowerCase());
-              const matchCurrencyPo =
-                !itemFilters.currencyPo ||
-                (
-                  item.currencyPoName ||
-                  item.currencyName ||
-                  item.currencyPoCode ||
-                  item.currencyCode ||
-                  data.currencyCode ||
-                  ""
-                )
-                  .toLowerCase()
-                  .includes(itemFilters.currencyPo.toLowerCase());
-              const matchPerPo =
-                !itemFilters.perPo ||
-                String(item.perPo || item.per || "")
-                  .toLowerCase()
-                  .includes(itemFilters.perPo.toLowerCase());
-              const matchOpu =
-                !itemFilters.opu ||
-                getItemOPUName(item)
-                  .toLowerCase()
-                  .includes(itemFilters.opu.toLowerCase());
-              const matchFc =
-                !itemFilters.fc ||
-                (item.fcPr || item.fundsCenterPr || item.fc || "")
-                  .toLowerCase()
-                  .includes(itemFilters.fc.toLowerCase());
-              const matchFp =
-                !itemFilters.fp ||
-                (item.fpPr || item.fp || "")
-                  .toLowerCase()
-                  .includes(itemFilters.fp.toLowerCase());
-              const matchCi =
-                !itemFilters.ci ||
-                (item.ciPr || item.commitmentItemCode || item.ci || "")
-                  .toLowerCase()
-                  .includes(itemFilters.ci.toLowerCase());
-              const matchCiName =
-                !itemFilters.ciName ||
-                (item.ciPrName || item.ciname || item.commitmentItemName || "")
-                  .toLowerCase()
-                  .includes(itemFilters.ciName.toLowerCase());
-              const matchBudgetPeriod =
-                !itemFilters.budgetPeriod ||
-                (item.budgetPeriod || "")
-                  .toLowerCase()
-                  .includes(itemFilters.budgetPeriod.toLowerCase());
-              const matchValueItem =
-                !itemFilters.valueItem ||
-                String(
-                  item.valueItem || item.budgetItem || item.valueItemOld || "",
-                )
-                  .toLowerCase()
-                  .includes(itemFilters.valueItem.toLowerCase());
-              const matchTotalBudget =
-                !itemFilters.totalBudget ||
-                String(item.totalBudget || item.totalBudgetOld || "")
-                  .toLowerCase()
-                  .includes(itemFilters.totalBudget.toLowerCase());
-              const matchSloc =
-                !itemFilters.storageLocation ||
-                (item.storageLocation || item.storeLocationCode || "")
-                  .toLowerCase()
-                  .includes(itemFilters.storageLocation.toLowerCase());
-              const matchValType =
-                !itemFilters.valType ||
-                (item.valType || item.valuationType || "")
-                  .toLowerCase()
-                  .includes(itemFilters.valType.toLowerCase());
-              const matchRfqCode =
-                !itemFilters.rfqCode ||
-                (
-                  item.rfqCode ||
-                  item.rfq ||
-                  (item.__rfq__ && item.__rfq__.code) ||
-                  ""
-                )
-                  .toLowerCase()
-                  .includes(itemFilters.rfqCode.toLowerCase());
-              const matchRfqItem =
-                !itemFilters.rfqItem ||
-                String(item.rfqItem || item.rfqItemNo || "")
-                  .toLowerCase()
-                  .includes(itemFilters.rfqItem.toLowerCase());
-              const matchPrCode =
-                !itemFilters.prCode ||
-                (item.prCode || item.purchaseRequisition || "")
-                  .toLowerCase()
-                  .includes(itemFilters.prCode.toLowerCase());
-              const matchPrItem =
-                !itemFilters.prItem ||
-                (item.prItemCode || item.prItem || item.prItemNo || "")
-                  .toLowerCase()
-                  .includes(itemFilters.prItem.toLowerCase());
-
-              return (
-                matchClosed &&
-                matchDeleted &&
-                matchItemNo &&
-                matchAccCate &&
-                matchCategory &&
-                matchMaterial &&
-                matchMatGroup &&
-                matchExtMatGr &&
-                matchAsset &&
-                matchService &&
-                matchShortText &&
-                matchQuantity &&
-                matchUom &&
-                matchDeliveryDate &&
-                matchGrossPrice &&
-                matchCurrencyRfq &&
-                matchPerRfq &&
-                matchPricePo &&
-                matchCurrencyPo &&
-                matchPerPo &&
-                matchOpu &&
-                matchFc &&
-                matchFp &&
-                matchCi &&
-                matchCiName &&
-                matchBudgetPeriod &&
-                matchValueItem &&
-                matchTotalBudget &&
-                matchSloc &&
-                matchValType &&
-                matchRfqCode &&
-                matchRfqItem &&
-                matchPrCode &&
-                matchPrItem
-              );
-            })
-            .map((item: any, idx: number) => ({
+          rows={[
+            {
+              cells: [
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "Tổng số lượng:",
+                formatNumberValue(totalQuantityUptoPO),
+                ...(data.status === PO_STATUS.APPROVED ||
+                data.status === PO_STATUS.CLOSED ||
+                data.status === PO_STATUS.COMPLETE
+                  ? [""]
+                  : []),
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+              ],
+            },
+            ...(data.lstItemPo || []).map((item: any) => ({
               cells: [
                 item.itemClosed || "---",
                 item.itemDeleted || "---",
-                item.itemLine ||
-                  item.itemNo ||
-                  String(idx + 1).padStart(5, "0"),
+                item.itemLine || item.itemNo || "---",
                 item.acccateName ||
                   item.accountAssignment ||
                   item.acccate ||
                   "---",
-                item.itemcateName || item.itemCategory || "---",
-                item.materialCode || "---",
+                item.itemcateName ||
+                  item.itemCategory ||
+                  item.category ||
+                  "---",
+                item.materialCode || item.code || "---",
                 item.materialGroupName || item.materialGroupCode || "---",
                 item.extMatGrName ||
                   item.externalMaterialGroupName ||
                   item.externalMaterialGroupCode ||
                   "---",
                 item.assetCode || "---",
-                item.serviceCode || "---",
+                item.serviceCode || item.orderCode || "---",
                 item.shortText || item.materialName || "---",
                 formatNumberValue(item.quantityUptoPO),
                 ...(data.status === PO_STATUS.APPROVED ||
@@ -1098,7 +795,9 @@ const PODetailInfoTab = ({
                       item.deliveryDate || item.expectedDeliveryDate,
                     ).format("DD/MM/YYYY")
                   : "---",
-                formatNumberValue(item.grossPrice || item.rfqPrice),
+                formatNumberValue(
+                  item.price || item.grossPrice || item.rfqPrice,
+                ),
                 item.currencyName || item.rfqCurrency || "---",
                 item.per || item.rfqPer || "---",
                 formatNumberValue(
@@ -1112,20 +811,32 @@ const PODetailInfoTab = ({
                   "---",
                 item.perPo || item.per || "---",
                 getItemOPUName(item),
-                item.fcPr || item.fundsCenterPr || item.fc || "---",
-                item.fpPr || item.fp || "---",
-                item.ciPr || item.commitmentItemCode || item.ci || "---",
-                item.ciPrName ||
-                  item.ciname ||
+                item.fc ||
+                  item.fundCenter ||
+                  item.fcPr ||
+                  item.fundsCenterPr ||
+                  "---",
+                item.fp || item.fpPr || "---",
+                item.ci || item.ciPr || item.commitmentItemCode || "---",
+                item.ciname ||
+                  item.ciPrName ||
                   item.commitmentItemName ||
                   "---",
-                item.budgetPeriod || "---",
+                item.budgetPeriod || item.budgetperiod || "---",
                 formatNumberValue(
                   item.valueItem || item.budgetItem || item.valueItemOld,
                 ),
                 formatNumberValue(item.totalBudget || item.totalBudgetOld),
-                item.storageLocation || item.storeLocationCode || "---",
-                item.valType || item.valuationType || "---",
+                formatNumberValue(item.lowerTolerance),
+                formatNumberValue(item.upperTolerance),
+                item.materialStorageLocationName ||
+                  item.storageLocation ||
+                  item.storeLocationCode ||
+                  "---",
+                item.validationType ||
+                  item.valType ||
+                  item.valuationType ||
+                  "---",
                 item.rfqCode ||
                   item.rfq ||
                   (item.__rfq__ && item.__rfq__.code) ||
@@ -1133,23 +844,18 @@ const PODetailInfoTab = ({
                 item.rfqItem || item.rfqItemNo || "---",
                 item.prCode || item.purchaseRequisition || "---",
                 item.prItemCode || item.prItem || item.prItemNo || "---",
-                <Table.EyeDetailRow
-                  key={`view-item-${idx}`}
-                  onPress={() => onShowItemDetail?.(item)}
-                />,
               ],
-            }))}
-          columnWidths={[
-            70, 70, 120, 120, 120, 200, 150, 200, 150, 150, 150, 150, 150, 180,
-            200, 180, 150, 200, 180, 150, 140, 180, 180, 180, 180, 140, 180,
-            180, 180, 180, 140, 140, 140, 140, 50,
+            })),
           ]}
-          stickyColumn="right"
+          columnWidths={[
+            70, 70, 120, 120, 120, 200, 150, 200, 150, 150, 200, 150, 150, 180,
+            200, 180, 150, 200, 180, 150, 140, 180, 180, 180, 180, 140, 180,
+            180, 180, 120, 120, 200, 140, 140, 140, 140, 140,
+          ]}
+          onRowDoublePress={handleRowDoublePressItem}
           horizontalScroll
         />
       </Collapse>
-
-      <Spacer size={120} />
     </ScrollView>
   );
 };
@@ -1157,19 +863,16 @@ const PODetailInfoTab = ({
 export default PODetailInfoTab;
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    padding: 5,
-  },
+  scrollContent: {},
   sectionContent: {
     paddingTop: 12,
     paddingBottom: 24,
-    paddingHorizontal: 0,
+    paddingHorizontal: 5,
   },
   subTitle: {
     marginTop: 12,
     marginBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
     paddingBottom: 4,
   },
   headerFilterBtn: {
@@ -1185,6 +888,5 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#F80D53",
   },
 });

@@ -11,9 +11,12 @@ const formatDateTime = (text: string | undefined | Date, format?: string) => {
   return date.format(format ?? "DD/MM/YYYY HH:mm");
 };
 
+import { useTheme } from "~/hooks/useTheme";
+
 export const VersionInfo = () => {
   const { channel = "", createdAt } = Updates;
   const formattedDate = createdAt ? formatDateTime(createdAt) : "";
+  const { colors } = useTheme();
 
   return (
     <Column
@@ -22,9 +25,9 @@ export const VersionInfo = () => {
       align="center"
       style={styles.container}
     >
-      <Text style={styles.text}>{`Môi trường: ${CONFIG.NODE_ENV}`}</Text>
-      <Text style={styles.text}>{`Môi trường nhúng: ${channel}`}</Text>
-      <Text style={styles.text}>{`Cập nhật: ${formattedDate}`}</Text>
+      <Text style={[styles.text, { color: colors.label as string }]}>{`Môi trường: ${CONFIG.NODE_ENV}`}</Text>
+      <Text style={[styles.text, { color: colors.label as string }]}>{`Môi trường nhúng: ${channel}`}</Text>
+      <Text style={[styles.text, { color: colors.label as string }]}>{`Cập nhật: ${formattedDate}`}</Text>
     </Column>
   );
 };
@@ -35,7 +38,6 @@ const styles = StyleSheet.create({
     bottom: 25,
   },
   text: {
-    color: "#666",
     fontSize: 12,
     marginHorizontal: 6,
   },

@@ -1,5 +1,11 @@
 import React, { useEffect } from "react";
-import { StyleSheet, View, ViewStyle, Pressable } from "react-native";
+import {
+  StyleSheet,
+  View,
+  ViewStyle,
+  Pressable,
+  ColorValue,
+} from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -24,7 +30,7 @@ export interface SwitchProps {
   /** Màu khi ON */
   color?: SwitchColor;
   /** Custom active color */
-  activeColor?: string;
+  activeColor?: ColorValue;
   /** Disabled state */
   disabled?: boolean;
   /** Style container bao ngoài cùng */
@@ -51,7 +57,7 @@ export const Switch = ({
 }: SwitchProps) => {
   const { colors, fonts } = useTheme();
 
-  const COLOR_MAP: Record<SwitchColor, string> = {
+  const COLOR_MAP: Record<SwitchColor, any> = {
     primary: colors.primary,
     success: colors.green,
     error: colors.red,
@@ -136,7 +142,13 @@ export const Switch = ({
               errorMessage && { borderWidth: 1, borderColor: colors.error },
             ]}
           >
-            <Animated.View style={[styles.thumb, animatedThumbStyle]} />
+            <Animated.View
+              style={[
+                styles.thumb,
+                animatedThumbStyle,
+                { shadowColor: colors.black as any },
+              ]}
+            />
           </Animated.View>
         </Pressable>
         {errorMessage && (
@@ -181,7 +193,6 @@ const styles = StyleSheet.create({
     borderRadius: THUMB_SIZE / 2,
     backgroundColor: "white",
     // Shadow cho thumb để nổi bật hơn giống iOS
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 2.5,

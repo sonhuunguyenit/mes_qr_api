@@ -50,18 +50,18 @@ export const Skeleton = ({
   const shimmerColors = (
     isDark
       ? [
-          "rgba(255, 255, 255, 0)",
-          "rgba(255, 255, 255, 0.05)",
-          "rgba(255, 255, 255, 0.15)",
-          "rgba(255, 255, 255, 0.05)",
-          "rgba(255, 255, 255, 0)",
+          colors.whiteAlpha0,
+          colors.whiteAlpha5,
+          colors.whiteAlpha15,
+          colors.whiteAlpha5,
+          colors.whiteAlpha0,
         ]
       : [
-          "rgba(255, 255, 255, 0)",
-          "rgba(255, 255, 255, 0.4)",
-          "rgba(255, 255, 255, 0.8)",
-          "rgba(255, 255, 255, 0.4)",
-          "rgba(255, 255, 255, 0)",
+          colors.whiteAlpha0,
+          colors.whiteAlpha40,
+          colors.whiteAlpha80,
+          colors.whiteAlpha40,
+          colors.whiteAlpha0,
         ]
   ) as [string, string, ...string[]];
 
@@ -71,7 +71,7 @@ export const Skeleton = ({
         {
           width,
           height,
-          backgroundColor: isDark ? colors.divider : "#E2E8F0",
+          backgroundColor: isDark ? colors.divider : colors.slate200,
           borderRadius: circle
             ? typeof height === "number"
               ? height / 2

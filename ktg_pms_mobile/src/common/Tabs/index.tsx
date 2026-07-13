@@ -1,24 +1,17 @@
-import React, {
-  createContext,
-  useContext,
-  useRef,
-  useEffect,
-  useMemo,
-} from "react";
-import { TabView, TabViewProps } from "@rneui/base";
-import { Icon } from "@rneui/base";
-import { useTheme } from "../../hooks/useTheme";
-import { sizes } from "~/constants/sizes";
+import { Icon, TabView, TabViewProps } from "@rneui/base";
+import React, { createContext, useContext, useMemo } from "react";
 import {
-  View,
+  ColorValue,
   ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
   StyleProp,
-  LayoutChangeEvent,
+  StyleSheet,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
+import { sizes } from "~/constants/sizes";
+import { useTheme } from "../../hooks/useTheme";
 import { Text } from "../Text";
 
 // ─── Context ────────────────────────────────────────────────────────────────
@@ -28,8 +21,10 @@ interface TabsContextProps {
   onChange: (index: number) => void;
   mode: "underline" | "pill";
   dense: boolean;
-  itemCount: number;
   registerItem: (index: number) => void;
+  activeColor?: ColorValue;
+  activeBackgroundColor?: ColorValue;
+  activeBorderColor?: ColorValue;
 }
 
 const TabsContext = createContext<TabsContextProps>({
@@ -37,7 +32,6 @@ const TabsContext = createContext<TabsContextProps>({
   onChange: () => {},
   mode: "underline",
   dense: false,
-  itemCount: 0,
   registerItem: () => {},
 });
 
@@ -51,6 +45,9 @@ export interface TabsProps {
   scrollable?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
   children: React.ReactNode;
+  activeColor?: ColorValue;
+  activeBackgroundColor?: ColorValue;
+  activeBorderColor?: ColorValue;
 }
 
 export interface TabsItemProps {
@@ -75,6 +72,9 @@ const TabsComponent = ({
   scrollable = false,
   containerStyle,
   children,
+  activeColor,
+  activeBackgroundColor,
+  activeBorderColor,
 }: TabsProps) => {
   const { colors, radius } = useTheme();
   const isPill = mode === "pill";
@@ -87,20 +87,18 @@ const TabsComponent = ({
     });
   });
 
-  const itemCount = React.Children.count(children);
-
   const barStyle = useMemo<ViewStyle>(
     () => ({
       flexDirection: "row",
-      backgroundColor: isPill ? colors.divider : colors.card,
-      height: dense ? 40 : 50,
-      borderRadius: isPill ? radius.md : 0,
-      padding: isPill ? 4 : 0,
-      borderBottomWidth: isPill ? 0 : StyleSheet.hairlineWidth,
-      borderBottomColor: colors.border,
+      backgroundColor: colors.tabs as string,
+      height: dense ? 44 : 54,
+      borderRadius: 0,
+      padding: isPill ? 6 : 0,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border as string,
       alignItems: "center",
     }),
-    [isPill, dense, colors, radius],
+    [isPill, dense, colors],
   );
 
   const contextValue = useMemo(
@@ -109,34 +107,23 @@ const TabsComponent = ({
       onChange,
       mode,
       dense,
-      itemCount,
       registerItem: () => {},
+      activeColor,
+      activeBackgroundColor,
+      activeBorderColor,
     }),
-    [value, onChange, mode, dense, itemCount],
+    [
+      value,
+      onChange,
+      mode,
+      dense,
+      activeColor,
+      activeBackgroundColor,
+      activeBorderColor,
+    ],
   );
 
-  const content = (
-    <View
-      style={[barStyle, !scrollable && { overflow: "hidden" }, containerStyle]}
-    >
-      {items}
-      {/* Underline indicator */}
-      {!isPill && itemCount > 0 && (
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: `${(value / itemCount) * 100}%` as any,
-            width: `${(1 / itemCount) * 100}%` as any,
-            height: 2,
-            backgroundColor: colors.primary,
-            borderRadius: 2,
-          }}
-        />
-      )}
-    </View>
-  );
+  const content = <View style={[barStyle, containerStyle]}>{items}</View>;
 
   return (
     <TabsContext.Provider value={contextValue}>
@@ -145,6 +132,7 @@ const TabsComponent = ({
           horizontal
           showsHorizontalScrollIndicator={false}
           bounces={false}
+          style={{ height: dense ? 44 : 54, flexGrow: 0 }}
           contentContainerStyle={{ flexGrow: 1 }}
         >
           {content}
@@ -168,45 +156,59 @@ const TabItemComponent = ({
   titleStyle,
   _index = 0,
 }: TabsItemProps) => {
-  const { colors, fonts, radius } = useTheme();
-  const { value, onChange, mode, dense, itemCount } = useContext(TabsContext);
+  const { colors, fonts, radius, isDark } = useTheme();
+  const {
+    value,
+    onChange,
+    mode,
+    dense,
+    activeColor: contextActiveColor,
+    activeBackgroundColor: contextActiveBackgroundColor,
+    activeBorderColor: contextActiveBorderColor,
+  } = useContext(TabsContext);
 
   const active = value === _index;
   const isPill = mode === "pill";
-  const activeColor = colors.primary;
-  const inactiveColor = colors.label;
+  const activeColor = contextActiveColor || colors.active;
+  const inactiveColor = isDark ? colors.label : colors.slate600;
   const iconColor = active
     ? isPill
-      ? colors.card
+      ? contextActiveColor || colors.card
       : activeColor
     : inactiveColor;
 
   const itemStyle = useMemo<ViewStyle>(
     () => ({
       flex: 1,
-      height: dense ? 32 : 42,
+      alignSelf: "stretch",
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 6,
-      paddingHorizontal: 8,
-      backgroundColor: isPill && active ? colors.primary : "transparent",
-      borderRadius: isPill ? radius.sm : 0,
-      // Tránh shrink khi scroll ngang
+      paddingHorizontal: 12,
+      backgroundColor:
+        isPill && active
+          ? (contextActiveBackgroundColor || colors.primary) as string
+          : "transparent",
+      borderRadius: isPill ? 8 : 0,
+      borderWidth: isPill && active ? 1.5 : 0,
+      borderColor:
+        isPill && active
+          ? (contextActiveBorderColor || activeColor) as string
+          : "transparent",
       flexShrink: 0,
+      marginVertical: isPill ? 3 : 0,
     }),
-    [active, isPill, dense, colors, radius],
-  );
-
-  const labelStyle = useMemo<TextStyle>(
-    () => ({
-      fontSize: sizes.fontSize.base,
-      fontFamily: active ? fonts.bold : fonts.regular,
-      color: active ? (isPill ? colors.card : activeColor) : inactiveColor,
-      textTransform: capitalize ? "capitalize" : "none",
-      letterSpacing: 0.2,
-    }),
-    [active, isPill, fonts, colors, capitalize, activeColor, inactiveColor],
+    [
+      active,
+      isPill,
+      dense,
+      colors,
+      radius,
+      contextActiveBackgroundColor,
+      contextActiveBorderColor,
+      activeColor,
+    ],
   );
 
   return (
@@ -218,14 +220,20 @@ const TabItemComponent = ({
       accessibilityState={{ selected: active }}
     >
       {iconName && (
-        <Icon name={iconName} type={iconType} size={18} color={iconColor} />
+        <Icon name={iconName} type={iconType} size={18} color={iconColor as string} />
       )}
       {label && (
         <Text
           numberOfLines={1}
-          weight={active ? "600" : "400"}
-          size={sizes.fontSize.base}
-          color={active ? (isPill ? colors.card : activeColor) : inactiveColor}
+          weight={active ? "700" : "500"}
+          size={sizes.fontSize.md}
+          color={
+            active
+              ? isPill
+                ? contextActiveColor || colors.card
+                : activeColor
+              : inactiveColor
+          }
           style={[
             {
               textTransform: capitalize ? "capitalize" : "none",
@@ -235,6 +243,22 @@ const TabItemComponent = ({
         >
           {label}
         </Text>
+      )}
+
+      {!isPill && active && (
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 3,
+            backgroundColor: activeColor as string,
+            borderTopLeftRadius: 3,
+            borderTopRightRadius: 3,
+            zIndex: 1,
+          }}
+        />
       )}
 
       {dot && <View style={dotStyle(colors)} />}
@@ -249,9 +273,9 @@ const dotStyle = (colors: any): ViewStyle => ({
   width: 8,
   height: 8,
   borderRadius: 4,
-  backgroundColor: colors.error,
+  backgroundColor: colors.error as string,
   borderWidth: 1.5,
-  borderColor: colors.card,
+  borderColor: colors.card as string,
 });
 
 // ─── Tabs.View + Tabs.Content ────────────────────────────────────────────────

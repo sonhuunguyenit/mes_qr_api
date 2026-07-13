@@ -8,6 +8,7 @@ import {
   DimensionValue,
   ColorValue,
 } from "react-native";
+import { useTheme } from "~/hooks/useTheme";
 
 type Border = {
   width?: number;
@@ -105,7 +106,7 @@ export const Row = forwardRef<View, RowProps>(
       width = "auto",
       height = "auto",
       border,
-      shadow = { color: "#000", opacity: 0, offsetX: 0, offsetY: 0, radius: 0 },
+      shadow,
       background = "transparent",
       loading = false,
       disabled = false,
@@ -115,6 +116,15 @@ export const Row = forwardRef<View, RowProps>(
     },
     ref,
   ) => {
+    const { colors } = useTheme();
+    const defaultShadow = {
+      color: colors.black,
+      opacity: 0,
+      offsetX: 0,
+      offsetY: 0,
+      radius: 0,
+    };
+    const resolvedShadow = shadow ? { ...defaultShadow, ...shadow } : defaultShadow;
     const rowStyle: ViewStyle = {
       flexDirection: reverse ? "row-reverse" : "row",
       justifyContent: center ? "center" : justify,
@@ -131,11 +141,14 @@ export const Row = forwardRef<View, RowProps>(
       borderStyle: border?.style,
       zIndex,
       opacity: disabled ? 0.5 : 1,
-      shadowColor: shadow.color,
-      shadowOpacity: shadow.opacity,
-      shadowOffset: { width: shadow.offsetX ?? 0, height: shadow.offsetY ?? 0 },
-      shadowRadius: shadow.radius,
-      elevation: shadow.radius,
+      shadowColor: resolvedShadow.color,
+      shadowOpacity: resolvedShadow.opacity,
+      shadowOffset: {
+        width: resolvedShadow.offsetX ?? 0,
+        height: resolvedShadow.offsetY ?? 0,
+      },
+      shadowRadius: resolvedShadow.radius,
+      elevation: resolvedShadow.radius,
       ...(full ? { flex: 1, width: "100%" } : {}),
       ...(width !== "auto" ? { width } : {}),
     };

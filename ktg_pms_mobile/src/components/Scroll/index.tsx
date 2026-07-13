@@ -25,6 +25,8 @@ type ScrollProps = {
   animated?: boolean;
 } & ScrollViewProps;
 
+import { useTheme } from "~/hooks/useTheme";
+
 export const Scroll = ({
   full,
   gap = 0,
@@ -42,10 +44,12 @@ export const Scroll = ({
   horizontal,
   ...props
 }: ScrollProps) => {
+  const { colors } = useTheme();
+
   if (loading) {
     return (
       <View style={styles.center}>
-        {skeleton || <ActivityIndicator size="large" />}
+        {skeleton || <ActivityIndicator size="large" color={colors.primary} />}
       </View>
     );
   }
@@ -53,11 +57,15 @@ export const Scroll = ({
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={{ marginBottom: 12 }}>
+        <Text style={{ marginBottom: 12, color: colors.text as string }}>
           {typeof error === "string" ? error : "Something went wrong"}
         </Text>
         {onRetry && (
-          <Text weight="600" style={styles.retryButton} onPress={onRetry}>
+          <Text
+            weight="600"
+            style={[styles.retryButton, { color: colors.primary as string }]}
+            onPress={onRetry}
+          >
             Retry
           </Text>
         )}
@@ -66,7 +74,11 @@ export const Scroll = ({
   }
 
   if (!children || (Array.isArray(children) && children.length === 0)) {
-    return <View style={styles.center}>{empty || <Text>No Data</Text>}</View>;
+    return (
+      <View style={styles.center}>
+        {empty || <Text style={{ color: colors.text as string }}>No Data</Text>}
+      </View>
+    );
   }
 
   const ScrollWrapper = animated ? Animated.ScrollView : ScrollView;
@@ -88,8 +100,6 @@ export const Scroll = ({
         {
           flexGrow: full ? 1 : 0,
           flexDirection: isHorizontal ? "row" : "column",
-          paddingHorizontal: 5,
-          paddingTop: 10,
           ...(gap ? (isHorizontal ? { columnGap: gap } : { rowGap: gap }) : {}),
         },
         contentContainerStyle,
@@ -108,6 +118,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   retryButton: {
-    color: "#007AFF",
+    fontWeight: "600",
   },
 });

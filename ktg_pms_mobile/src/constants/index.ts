@@ -38,9 +38,15 @@ export const HEIGHT_PICKER_DATE = 650;
 
 export const BOTTOM_SHEET_HEIGHT = 750;
 
-export const BOTTOM_SHEET_SNAPPOINTS = ["75%"];
+export const BOTTOM_SHEET_SNAPPOINTS = ["80%"];
 
 export const ITEMS_PER_PAGE = 10;
+
+export const BOTTOM_SHEET_DETAIL_TITLE = "Chi tiết thông tin";
+
+export const BOTTOM_SHEET_FILTER_TITLE = "Bộ lọc tìm kiếm";
+
+export const BOTTOM_SHEET_TIME_LOADING = 350;
 
 export const MONTHS = [
   {
@@ -193,3 +199,5 @@ export const CALENDAR_THEME = {
 } as const;
 
 export const PAGE_SIZE = 1000000;
+
+export const PLACEHOLDER_SEARCH_BAR = "Tìm kiếm chi tiết...";

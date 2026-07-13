@@ -1,7 +1,9 @@
 import React from "react";
 import { StyleSheet, View, Pressable } from "react-native";
 import { Icon } from "@rneui/base";
-import { Row, Spacer, Text } from "~/common";
+import { Row } from "../Row";
+import { Spacer } from "../Spacer";
+import { Text } from "../Text";
 import { useTheme } from "~/hooks/useTheme";
 
 interface SearchBoxProps {
@@ -65,7 +67,12 @@ export const SearchBox = ({
               color={colors.label}
             />
             {hasFilter && (
-              <View style={[styles.badge, { backgroundColor: colors.error }]} />
+              <View
+                style={[
+                  styles.badge,
+                  { backgroundColor: colors.error, borderColor: colors.white },
+                ]}
+              />
             )}
           </View>
         )}
@@ -95,6 +102,5 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     borderWidth: 1.5,
-    borderColor: "#FFFFFF",
   },
 });

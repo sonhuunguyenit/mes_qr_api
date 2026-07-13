@@ -46,3 +46,6 @@ yarn-error.*
 # Firebase & sensitive config files
 #src/@config/android/production/
 #src/@config/ios/production/
+
+# local references
+references/

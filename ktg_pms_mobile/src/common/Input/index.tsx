@@ -7,9 +7,9 @@ import {
   TextInputFocusEventData,
   TextStyle,
   ViewStyle,
+  Platform,
 } from "react-native";
 import { useTheme } from "~/hooks/useTheme";
-
 import { StyleProp } from "react-native";
 
 interface InputProps extends RNInputProps {
@@ -69,21 +69,26 @@ export const Input = forwardRef<TextInput, InputProps>(
             fontSize: sizes.fontSize.base,
           },
           inputStyle,
+          props.secureTextEntry &&
+            Platform.OS === "ios" && {
+              fontFamily: undefined,
+              fontWeight: undefined,
+            },
         ]}
         labelStyle={[
           {
             fontFamily: fonts.medium,
             color: colors.label,
             fontSize: sizes.fontSize.base,
-            marginBottom: 8,
           },
           labelStyle,
         ]}
         errorStyle={[
           {
             color: colors.error,
-            fontSize: sizes.fontSize.xs, // Error nhỏ hơn 1 bit (12px)
+            fontSize: sizes.fontSize.xs,
             marginTop: spacing.xs,
+            marginBottom: -5, // default RNInput có margin bottom 5
           },
           errorStyle,
         ]}

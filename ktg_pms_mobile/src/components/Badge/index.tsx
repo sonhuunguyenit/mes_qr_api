@@ -1,5 +1,5 @@
-import React from "react";
 import {
+  ColorValue,
   StyleProp,
   StyleSheet,
   View,
@@ -11,35 +11,45 @@ import { Spacer, Text } from "~/common";
 interface BadgeProps {
   label: string;
   value?: string;
-  color?: string;
-  backgroundColor?: string;
+  color?: ColorValue;
+  backgroundColor?: ColorValue;
   showDot?: boolean;
   style?: StyleProp<ViewStyle>;
   labelStyle?: StyleProp<TextStyle>;
   valueStyle?: StyleProp<TextStyle>;
 }
 
+import { useTheme } from "~/hooks/useTheme";
+
 export const Badge = ({
   label,
   value,
-  color = "#22C55E",
+  color,
   backgroundColor,
   showDot = true,
   style,
   labelStyle,
   valueStyle,
 }: BadgeProps) => {
-  const finalBgColor = backgroundColor || color + "15";
+  const { colors } = useTheme();
+  const defaultColor = colors.green;
+  const finalColor = color || defaultColor;
+
+  const finalBgColor =
+    backgroundColor ||
+    (typeof finalColor === "string" ? finalColor + "15" : colors.neutral15);
 
   return (
     <View style={[styles.container, { backgroundColor: finalBgColor }, style]}>
-      {showDot && <View style={[styles.dot, { backgroundColor: color }]} />}
+      {showDot && (
+        <View style={[styles.dot, { backgroundColor: finalColor }]} />
+      )}
       {showDot && <Spacer size={6} horizontal />}
 
-      <Text bold color="#64748B" style={labelStyle}>
-        {label}:{" "}
+      <Text bold color={colors.label} style={labelStyle}>
+        {label ? `${label}: ` : ""}
       </Text>
-      <Text bold weight="700" style={[{ color: color }, valueStyle]}>
+      <Text bold weight="700" style={[{ color: finalColor }, valueStyle]}>
         {value}
       </Text>
     </View>

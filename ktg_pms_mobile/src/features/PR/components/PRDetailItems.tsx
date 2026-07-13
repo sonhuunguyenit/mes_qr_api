@@ -1,13 +1,10 @@
 import moment from "moment";
-import React, { useCallback, useMemo, useState } from "react";
-import { StyleSheet } from "react-native";
+import React, { useCallback, useMemo } from "react";
 import { Collapse } from "~/common";
 import Table, { ColumnTable, RowTable } from "~/common/Table";
-import { useSheet } from "~/contexts/SheetContext";
 import { PRItemData } from "~/services/pr/pr.type";
-import PRItemTableFilterSheet, {
-  PRItemTableFilters,
-} from "../sheets/PRItemTableFilterSheet";
+import { useTheme } from "~/hooks/useTheme";
+import globalStyle from "~/styles/global-style";
 
 interface PRDetailItemsProps {
   data: PRItemData;
@@ -15,9 +12,9 @@ interface PRDetailItemsProps {
 }
 
 const WIDTHS = [
-  100, 180, 200, 100, 100, 100, 100, 150, 100, 150, 170, 150, 200, 250, 150,
-  150, 150, 100, 150, 200, 200, 150, 100, 100, 100, 120, 100, 150, 150, 150,
-  150, 150, 150, 150, 60,
+  100, 180, 300, 60, 60, 60, 150, 150, 100, 150, 170, 150, 250, 250, 150, 150,
+  150, 100, 150, 200, 200, 150, 100, 100, 100, 120, 100, 150, 150, 150, 150,
+  150, 150, 150,
 ];
 
 const ALIGNS: ("left" | "center" | "right")[] = [
@@ -55,109 +52,16 @@ const ALIGNS: ("left" | "center" | "right")[] = [
   "left", // 31 Fix Vendor
   "left", // 32 Tracking Number
   "left", // 33 Sloc
-  "center", // 34 Tác vụ
 ];
 
 export const PRDetailItems = React.memo(
   ({ data, onShowDetail }: PRDetailItemsProps) => {
-    const { openSheet, closeSheet } = useSheet();
-    const [tableFilters, setTableFilters] = useState<PRItemTableFilters>({
-      itemNo: "",
-      materialCode: "",
-      shortText: "",
-      acccate: "",
-      category: "",
-      plantCode: "",
-      costCenterCode: "",
-      assetCode: "",
-      orderCode: "",
-      materialGroupCode: "",
-      externalMaterialGroupCode: "",
-      purchasingGroupCode: "",
-      glAccountCode: "",
-      fund: "",
-      fc: "",
-      fp: "",
-      ci: "",
-      requisitioner: "",
-      sloc: "",
-    });
-
-    const isFiltered = !!(
-      tableFilters.itemNo ||
-      tableFilters.materialCode ||
-      tableFilters.shortText ||
-      tableFilters.acccate ||
-      tableFilters.category ||
-      tableFilters.plantCode ||
-      tableFilters.costCenterCode ||
-      tableFilters.assetCode ||
-      tableFilters.orderCode ||
-      tableFilters.materialGroupCode ||
-      tableFilters.externalMaterialGroupCode ||
-      tableFilters.purchasingGroupCode ||
-      tableFilters.glAccountCode ||
-      tableFilters.fund ||
-      tableFilters.fc ||
-      tableFilters.fp ||
-      tableFilters.ci ||
-      tableFilters.requisitioner ||
-      tableFilters.sloc
-    );
-
-    const handleOpenFilter = useCallback(() => {
-      openSheet(
-        <PRItemTableFilterSheet
-          initialFilters={tableFilters}
-          onApply={setTableFilters}
-          onClose={closeSheet}
-        />,
-      );
-    }, [openSheet, tableFilters, closeSheet]);
-
+    const { colors } = useTheme();
     const formatNum = (val: any) =>
       val ? Number(val).toLocaleString("en-US") : "0";
 
     const tableContent = useMemo(() => {
-      const items =
-        data.lstDetail?.filter((item) => {
-          const checkFilter = (
-            field: string | undefined,
-            filter: string | undefined,
-          ) => !filter || field?.toLowerCase().includes(filter.toLowerCase());
-
-          return (
-            checkFilter(item.itemNo, tableFilters.itemNo) &&
-            checkFilter(item.materialCode, tableFilters.materialCode) &&
-            checkFilter(item.shortText, tableFilters.shortText) &&
-            checkFilter(item.acccate, tableFilters.acccate) &&
-            checkFilter(item.category, tableFilters.category) &&
-            checkFilter(item.plantCode, tableFilters.plantCode) &&
-            checkFilter(item.costCenterCode, tableFilters.costCenterCode) &&
-            checkFilter(item.assetCode, tableFilters.assetCode) &&
-            checkFilter(item.orderCode, tableFilters.orderCode) &&
-            checkFilter(
-              item.materialGroupCode,
-              tableFilters.materialGroupCode,
-            ) &&
-            checkFilter(
-              item.externalMaterialGroupCode,
-              tableFilters.externalMaterialGroupCode,
-            ) &&
-            checkFilter(
-              item.purchasingGroupCode,
-              tableFilters.purchasingGroupCode,
-            ) &&
-            checkFilter(item.glAccountCode, tableFilters.glAccountCode) &&
-            checkFilter(item.fund, tableFilters.fund) &&
-            checkFilter(item.fc, tableFilters.fc) &&
-            checkFilter(item.fp, tableFilters.fp) &&
-            checkFilter(item.ci, tableFilters.ci) &&
-            checkFilter(item.requisitioner, tableFilters.requisitioner) &&
-            checkFilter(item.sloc, tableFilters.sloc)
-          );
-        }) || [];
-
+      const items = data.lstDetail || [];
       const content: RowTable[] = items.map((item, idx) => ({
         cells: [
           item.itemNo || "",
@@ -210,10 +114,6 @@ export const PRDetailItems = React.memo(
           item.fix_vendor || "",
           item.trackingNumber || "",
           item.sloc || "",
-          <Table.EyeDetailRow
-            key={`eye-${idx}`}
-            onPress={() => onShowDetail?.(item)}
-          />,
         ] as ColumnTable[],
       }));
 
@@ -226,7 +126,7 @@ export const PRDetailItems = React.memo(
         );
 
         content.push({
-          rowStyle: { backgroundColor: "#F8FAFC" },
+          rowStyle: { backgroundColor: colors.lgrayBg },
           cells: [
             "", // 0 Item line
             "", // 1 Material
@@ -268,19 +168,32 @@ export const PRDetailItems = React.memo(
             "", // 31 Fix Vendor
             "", // 32 Tracking Number
             "", // 33 Sloc
-            "", // 34 Tác vụ
           ] as ColumnTable[],
         });
       }
 
       return content;
-    }, [data.lstDetail, tableFilters, onShowDetail]);
+    }, [data.lstDetail, colors]);
+
+    const handleRowDoublePress = useCallback(
+      (index: number) => {
+        const items = data.lstDetail || [];
+        const item = items[index];
+        if (item) {
+          onShowDetail?.(item);
+        }
+      },
+      [data.lstDetail, onShowDetail],
+    );
 
     return (
-      <Collapse title="II. Danh sách Item" collapsible defaultExpanded={true}>
+      <Collapse
+        title="II. Danh sách item"
+        collapsible
+        containerStyle={globalStyle.collapseContainer}
+      >
         <Table
           horizontalScroll
-          containerStyle={{ marginHorizontal: -16 }}
           columns={[
             "Item line",
             "Material",
@@ -316,35 +229,14 @@ export const PRDetailItems = React.memo(
             "Fix Vendor",
             "Tracking Number",
             "Sloc",
-            <Table.ButtonFilterTable
-              key="item-filter"
-              onPress={handleOpenFilter}
-              isFiltered={isFiltered}
-            />,
           ]}
           columnWidths={WIDTHS}
           columnTextAlignments={ALIGNS}
-          stickyColumn="right"
           rows={tableContent}
+          onRowDoublePress={handleRowDoublePress}
+          pagination={{ enabled: false }}
         />
       </Collapse>
     );
   },
 );
-
-const styles = StyleSheet.create({
-  filterBtn: {
-    padding: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dot: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#F80D53",
-  },
-});

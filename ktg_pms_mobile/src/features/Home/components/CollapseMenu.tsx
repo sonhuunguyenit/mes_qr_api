@@ -1,67 +1,111 @@
-import React from "react";
-import { StyleSheet, View } from "react-native";
-import { Collapse, Text } from "~/common";
+import React, { useMemo } from "react";
+import { Platform, StyleSheet, View } from "react-native";
+import { Collapse, Divider } from "~/common";
+import { Module } from "../types";
+import { MenuGrid } from "./MenuGrid";
+import { CollapseItem } from "./CollapseItem";
 import { useTheme } from "~/hooks/useTheme";
-import { Module, ModuleItem } from "../types";
-import { MenuBlock, MenuGrid } from "./MenuGrid";
 
 interface CollapseMenuProps {
   mod: Module;
   onPress: (id: string, subId?: string) => void;
 }
 
-export const CollapseItem = ({ item }: { item: ModuleItem }) => {
-  const { colors } = useTheme();
-  return (
-    <MenuBlock
-      title={item.title}
-      icon={item.icon || "circle"}
-      count={item.count}
-      columns={3}
-      // iconBackgroundColor={colors.lyellowIcon}
-      // iconColor={colors.yellow}
-    />
-  );
-};
-
 export const CollapseMenu = ({ mod, onPress }: CollapseMenuProps) => {
-  const { colors, spacing } = useTheme();
+  const { colors } = useTheme();
+
+  const CollapseMenuStyle = useMemo(
+    () => ({
+      titleStyle: {
+        fontSize: 14,
+        fontWeight: "600" as const,
+        color: colors.slate700 as string,
+      },
+      headerStyle: {
+        borderBottomWidth: 0.75,
+        borderColor: colors.border as string,
+      },
+      icon: {
+        name: "grid",
+        type: "entypo",
+        size: 17,
+        color: colors.slate700 as string,
+      },
+      containerStyle: {
+        paddingHorizontal: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+      },
+    }),
+    [colors],
+  );
 
   return (
-    <View style={styles.container}>
-      <Collapse
-        title={mod.title}
-        titleColor={colors.active}
-        icon={{
-          name: mod.icon || "grid",
-          type: (mod.iconType as any) || "feather",
-          size: 18,
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.card as string,
+          shadowColor: colors.black as string,
+        },
+      ]}
+    >
+      <View
+        style={{
+          borderRadius: 12,
+          overflow: "hidden",
+          borderWidth: 1,
+          borderColor: colors.border as string,
         }}
-        iconColor={colors.active}
-        collapsible
-        expanded={mod.forceExpand}
-        style={{ paddingHorizontal: 10, paddingVertical: 16 }}
-        headerStyle={{ paddingBottom: 0 }}
-        noHeaderPadding
-        noContentPadding
       >
-        <View style={{ paddingTop: 16 }}>
-          <MenuGrid marginTop={0}>
+        <Collapse
+          defaultExpanded={true}
+          title={mod.title}
+          collapsible
+          expanded={mod.forceExpand}
+          {...CollapseMenuStyle}
+        >
+          <MenuGrid>
             {mod.items?.map((item, index) => (
-              <View key={index} onTouchEnd={() => onPress(mod.id, item.type)}>
-                <CollapseItem item={item} />
-              </View>
+              <CollapseItem
+                key={index}
+                item={item}
+                index={index}
+                total={mod.items?.length || 0}
+                onPress={() => onPress(mod.id, item.type)}
+              />
             ))}
-            {(!mod.items || mod.items.length === 0) && (
-              <View style={styles.empty}>
-                <Text size={13} color={colors.placeholder}>
-                  Không có dữ liệu
-                </Text>
-              </View>
-            )}
           </MenuGrid>
-        </View>
-      </Collapse>
+
+          <Divider width={0.75} color={colors.border as string} />
+
+          <View
+            style={{
+              alignSelf: "center",
+              height: 20,
+              marginTop: 10,
+            }}
+          >
+            <View
+              style={{
+                width: 40,
+                height: 8,
+                backgroundColor: colors.border as string,
+                borderRadius: 50,
+              }}
+            >
+              <View
+                style={{
+                  width: 23,
+                  height: 8,
+                  backgroundColor: "#ffc325", // Keeping specific decorative color
+                  borderRadius: 50,
+                }}
+              ></View>
+            </View>
+          </View>
+        </Collapse>
+      </View>
     </View>
   );
 };
@@ -69,15 +113,17 @@ export const CollapseMenu = ({ mod, onPress }: CollapseMenuProps) => {
 const styles = StyleSheet.create({
   container: {
     marginBottom: 10,
-  },
-  headerBadge: {
-    paddingHorizontal: 10,
-    height: 22,
-    borderRadius: 11,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#FFF",
+    borderRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.03,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   empty: {
     width: "100%",

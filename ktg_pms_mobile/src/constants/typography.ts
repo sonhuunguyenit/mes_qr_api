@@ -2,46 +2,76 @@ import { sizes } from "~/constants/sizes";
 import { StyleSheet } from "react-native";
 
 export const typography = StyleSheet.create({
-  h1: {
-    fontSize: sizes.fontSize.xxxl,
-    fontWeight: "bold",
-    lineHeight: 40,
-  },
-  h2: {
-    fontSize: sizes.fontSize.xxl,
-    fontWeight: "bold",
-    lineHeight: 32,
-  },
-  h3: {
+  header: {
+    fontFamily: "Inter-Regular",
     fontSize: sizes.fontSize.xl,
-    fontWeight: "600",
-    lineHeight: 28,
   },
-  h4: {
+  title: {
+    fontFamily: "Inter-SemiBold",
     fontSize: sizes.fontSize.lg,
-    fontWeight: "600",
-    lineHeight: 24,
-  },
-  body: {
-    fontSize: sizes.fontSize.base,
-    lineHeight: 22,
-  },
-  bodySmall: {
-    fontSize: sizes.fontSize.xs,
-    lineHeight: 18,
-  },
-  caption: {
-    fontSize: sizes.fontSize.xs,
-    lineHeight: 16,
-  },
-  button: {
-    fontSize: sizes.fontSize.base,
-    fontWeight: "600",
   },
   label: {
+    fontFamily: "Inter-Regular",
     fontSize: sizes.fontSize.base,
   },
   value: {
+    fontFamily: "Inter-Regular",
     fontSize: sizes.fontSize.base,
+  },
+  text: {
+    fontFamily: "Inter-Regular",
+    fontSize: sizes.fontSize.base,
+  },
+  description: {
+    fontFamily: "Inter-Regular",
+    fontSize: sizes.fontSize.base,
+  },
+  input: {
+    fontFamily: "Inter-Regular",
+    fontSize: sizes.fontSize.base,
+  },
+  placeholder: {
+    fontFamily: "Inter-Regular",
+    fontSize: sizes.fontSize.base,
+  },
+  bold: {
+    fontFamily: "Inter-Bold",
+    fontSize: sizes.fontSize.base,
+    fontWeight: "700",
+  },
+  medium: {
+    fontFamily: "Inter-Medium",
+    fontSize: sizes.fontSize.base,
+    fontWeight: "500",
+  },
+  light: {
+    fontFamily: "Inter-Light",
+    fontSize: sizes.fontSize.base,
+    fontWeight: "300",
+  },
+  italic: {
+    fontFamily: "Inter-Medium",
+    fontSize: sizes.fontSize.base,
+    fontWeight: "400",
+    fontStyle: "italic",
+  },
+  underline: {
+    fontFamily: "Inter-Medium",
+    fontSize: sizes.fontSize.base,
+    fontWeight: "400",
+    textDecorationLine: "underline",
+  },
+  strikethrough: {
+    fontFamily: "Inter-Medium",
+    fontSize: sizes.fontSize.base,
+    fontWeight: "400",
+    textDecorationLine: "line-through",
+  },
+  uppercase: {
+    fontFamily: "Inter-Medium",
+    fontSize: sizes.fontSize.base,
+    fontWeight: "400",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
 });

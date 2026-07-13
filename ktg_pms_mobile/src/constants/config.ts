@@ -5,7 +5,7 @@ const expo: any = Constants.expoConfig?.extra ?? {};
 export const CONFIG = {
   NODE_ENV: expo.NODE_ENV ?? "development",
 
-  API_URL: "https://uat-pms.kimtingroup.com:8081",
+  API_URL: "https://uat-pms.kimtingroup.com:8081", // http://192.168.2.96:3400 https://uat-pms.kimtingroup.com:8081
 
   APP_NAME: expo.APP_NAME ?? "",
 

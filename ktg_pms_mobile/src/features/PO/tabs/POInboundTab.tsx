@@ -1,17 +1,14 @@
-import React, { useState } from "react";
-import { View, StyleSheet, ActivityIndicator, ScrollView } from "react-native";
 import moment from "moment";
-import { Table, Column, Row, Spacer, Text } from "~/common";
-import { useTheme } from "~/hooks/useTheme";
+import React, { useState } from "react";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
+import { Spacer, Table } from "~/common";
 import { useSheet } from "~/contexts/SheetContext";
-import { useInboundList } from "../hooks";
-import { PODetailData } from "~/services/po/po.type";
+import { useTheme } from "~/hooks/useTheme";
 import { InboundItem } from "~/services/inbound/inbound.type";
-import POInboundTableFilterSheet, {
-  POInboundTableFilters,
-} from "../sheets/POInboundTableFilterSheet";
+import { PODetailData } from "~/services/po/po.type";
+import globalStyle from "~/styles/global-style";
+import { useInboundList } from "../hooks";
 import POInboundDetailSheet from "../sheets/POInboundDetailSheet";
-import { Scroll } from "~/components/Scroll";
 
 interface POInboundTabProps {
   data: Partial<PODetailData>;
@@ -23,37 +20,22 @@ const POInboundTab = ({ data }: POInboundTabProps) => {
   const [pageIndex, setPageIndex] = useState(1);
   const pageSize = 10;
 
-  const [filters, setFilters] = useState<POInboundTableFilters>({
-    inboundNumber: "",
-    sapShipmentNumber: "",
-    shippingType: "",
-    shipmentCostNumber: "",
-    supplierName: "",
-    dateArrivalPort: undefined,
-    dateArrivalWarehouse: undefined,
-    createdAt: undefined,
-    createdByName: "",
-    statusName: "",
-  });
-
+  const poId = data?.id || (data as any)?.response?.id;
   const { data: inboundData, isLoading } = useInboundList({
-    ...filters,
     pageIndex,
     pageSize,
+    poIds: poId,
   });
-
-  const handleOpenFilter = () => {
-    openSheet(
-      <POInboundTableFilterSheet
-        initialFilters={filters}
-        onApply={setFilters}
-        onClose={closeSheet}
-      />,
-    );
-  };
 
   const handleOpenDetail = (item: InboundItem) => {
     openSheet(<POInboundDetailSheet data={item} onClose={closeSheet} />);
+  };
+
+  const handleRowDoublePress = (index: number) => {
+    const item = inboundData?.data?.[index];
+    if (item) {
+      handleOpenDetail(item);
+    }
   };
 
   const columns = [
@@ -68,12 +50,9 @@ const POInboundTab = ({ data }: POInboundTabProps) => {
     "Ngày tạo",
     "Người tạo",
     "Trạng thái",
-    <Table.ButtonFilterTable key="inbound-filter" onPress={handleOpenFilter} />,
   ];
 
-  const columnWidths = [
-    150, 150, 150, 150, 200, 150, 150, 150, 180, 150, 150, 50,
-  ];
+  const columnWidths = [150, 150, 150, 150, 200, 150, 150, 150, 180, 150, 150];
 
   const rows = (inboundData?.data || []).map((item: InboundItem) => ({
     cells: [
@@ -94,7 +73,6 @@ const POInboundTab = ({ data }: POInboundTabProps) => {
         : "---",
       item.createdByName,
       item.statusName,
-      <Table.EyeDetailRow onPress={() => handleOpenDetail(item)} />,
     ],
   }));
 
@@ -107,34 +85,26 @@ const POInboundTab = ({ data }: POInboundTabProps) => {
   }
 
   return (
-    <View style={styles.container}>
-      <Scroll>
-        <Table
-          columns={columns}
-          rows={rows}
-          columnWidths={columnWidths}
-          horizontalScroll
-          stickyColumn="right"
-          containerStyle={styles.table}
-          pagination={{
-            enabled: true,
-            defaultPageSize: 5,
-            pageSizeOptions: [],
-            showTotal: false,
-          }}
-        />
-        <Spacer size={20} />
-      </Scroll>
-    </View>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={globalStyle.scrollContainerDetail}
+    >
+      <Table
+        columns={columns}
+        rows={rows}
+        columnWidths={columnWidths}
+        horizontalScroll
+        onRowDoublePress={handleRowDoublePress}
+        containerStyle={styles.table}
+      />
+      <Spacer size={10} />
+    </ScrollView>
   );
 };
 
 export default POInboundTab;
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 5,
-  },
   center: {
     flex: 1,
     justifyContent: "center",

@@ -1,0 +1,82 @@
+{
+  "project_info": {
+    "project_number": "837701450371",
+    "project_id": "ktg-dev-f9874",
+    "storage_bucket": "ktg-dev-f9874.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:837701450371:android:cbeaa20649abf2e91d79b6",
+        "android_client_info": {
+          "package_name": "com.ktg.ape.development"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "837701450371-3c9bjj8t5aia1cav0o9pg4cgujsua5j1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlgjkCG4TIRCG1hjqBAxqw6i7roT7RFzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "837701450371-3c9bjj8t5aia1cav0o9pg4cgujsua5j1.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "837701450371-06mkgdaln2vkdtfilihtet13jnbh6vfh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ktg.ape.development"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:837701450371:android:b71fe9279216ad361d79b6",
+        "android_client_info": {
+          "package_name": "com.ktg.pms.pro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "837701450371-3c9bjj8t5aia1cav0o9pg4cgujsua5j1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlgjkCG4TIRCG1hjqBAxqw6i7roT7RFzU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "837701450371-3c9bjj8t5aia1cav0o9pg4cgujsua5j1.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "837701450371-06mkgdaln2vkdtfilihtet13jnbh6vfh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ktg.ape.development"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

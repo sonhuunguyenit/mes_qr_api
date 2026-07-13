@@ -16,29 +16,40 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Images } from "~/assets";
 import { Column, Divider, Input, Linear, Row, Spacer, Text } from "~/common";
+import { VersionInfo } from "~/components";
 import { SCREEN_HEIGHT, SCREEN_WIDTH } from "~/constants";
-import { colors } from "~/constants/colors";
+import { useTheme } from "~/hooks/useTheme";
 import { STORAGE_KEYS } from "~/constants/storage";
 import useLogin from "~/hooks/useLogin";
 import { useToast } from "~/hooks/useToast";
 import { useWaiting } from "~/hooks/useWaiting";
 import StorageHelper from "~/utils/storage";
 import ValidateHelper, { LoginSchema } from "~/utils/validation";
+import { useAuth } from "~/hooks/useAuth";
+import {
+  CompanyPickerSheet,
+  CompanyPickerSheetHandle,
+} from "../components/CompanyPickerSheet";
+import { authService } from "~/services/auth/auth.service";
 
 type FormData = LoginSchema;
 
 const Login = () => {
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const isSmallScreen = SCREEN_HEIGHT < 750;
   const { start, stop } = useWaiting();
   const isFocused = useIsFocused();
   const [showPassword, setShowPassword] = useState(false);
   const { onLogin } = useLogin();
+  const { user, onSetUser } = useAuth();
   const { showToast } = useToast();
   const [rememberUsername, setRememberUsername] = useState(true);
   const translateY = useRef(new Animated.Value(300)).current;
   const opacity = useRef(new Animated.Value(0)).current;
   const topShapeY = useRef(new Animated.Value(-200)).current;
   const bottomShapeY = useRef(new Animated.Value(200)).current;
+  const companyPickerRef = useRef<CompanyPickerSheetHandle>(null);
 
   const {
     control,
@@ -69,12 +80,12 @@ const Login = () => {
         }),
         Animated.timing(topShapeY, {
           toValue: 0,
-          duration: 200,
+          duration: 150,
           useNativeDriver: true,
         }),
         Animated.timing(bottomShapeY, {
           toValue: 0,
-          duration: 200,
+          duration: 150,
           useNativeDriver: true,
         }),
       ]).start();
@@ -92,35 +103,51 @@ const Login = () => {
       }
     };
     loadSavedUsername();
-  }, [setValue]);
+  }, []);
 
   const onSubmit = async (data: FormData) => {
     try {
       start();
       await onLogin({ username: data.username, password: data.password });
-    } catch (error: any) {
-      showToast({
-        type: "danger",
-        message: error?.message || "Đăng nhập thất bại",
-      });
     } finally {
       stop();
     }
   };
 
+  useEffect(() => {
+    if (user && user.listCompany && user.listCompany.length > 1) {
+      companyPickerRef.current?.open();
+    }
+  }, [user]);
+
+  const handleSelectCompany = async (companyId: string) => {
+    try {
+      await authService.updateCompany(companyId);
+      await onSetUser({ ...user!, companyId });
+    } catch (e) {
+      showToast({ type: "danger", message: "Không thể chọn công ty" });
+    }
+  };
+
   return (
-    <Linear style={{ flex: 1, backgroundColor: "#FFF" }}>
+    <Linear>
       {/* Background Shapes */}
       <Animated.View
         style={[
           styles.bgTopShape,
-          { transform: [{ rotate: "-10deg" }, { translateY: topShapeY }] },
+          {
+            transform: [{ translateY: topShapeY }],
+            backgroundColor: colors.goldShape as string,
+          },
         ]}
       />
       <Animated.View
         style={[
           styles.bgBottomShape,
-          { transform: [{ rotate: "-10deg" }, { translateY: bottomShapeY }] },
+          {
+            transform: [{ translateY: bottomShapeY }],
+            backgroundColor: colors.neutral100 as string,
+          },
         ]}
       />
 
@@ -138,12 +165,20 @@ const Login = () => {
           <View
             style={[
               styles.header,
-              { paddingTop: insets.top, height: SCREEN_HEIGHT * 0.26 },
+              {
+                paddingTop: insets.top,
+                height: isSmallScreen
+                  ? SCREEN_HEIGHT * 0.22
+                  : SCREEN_HEIGHT * 0.26,
+              },
             ]}
           >
             <Image
               source={Images.logo}
-              style={styles.logoImage}
+              style={[
+                styles.logoImage,
+                isSmallScreen && { width: 80, height: 80 },
+              ]}
               resizeMode="contain"
             />
           </View>
@@ -151,19 +186,51 @@ const Login = () => {
           <Animated.View
             style={[
               styles.shadowWrapper,
-              { transform: [{ translateY }], opacity },
+              {
+                transform: [{ translateY }],
+                opacity,
+                backgroundColor: colors.card as string,
+              },
             ]}
           >
-            <View style={styles.loginCard}>
-              <View style={styles.cardHeader}>
+            <View
+              style={[
+                styles.loginCard,
+                {
+                  backgroundColor: colors.neutral50 as string,
+                  borderColor: colors.blackAlpha3 as string,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.cardHeader,
+                  { backgroundColor: colors.goldCream as string },
+                ]}
+              >
                 <Column align="stretch" gap={6}>
                   {/* Title — một màu đen, không tách vàng/đen */}
-                  <Text size={24} weight="800" color="#1A1C1E">
+                  <Text
+                    size={isSmallScreen ? 20 : 24}
+                    weight="800"
+                    color={colors.neutral900}
+                  >
                     Đăng nhập
                   </Text>
-                  <Text size={28} weight="900" color={"#FFB300"}>
+                  <Text
+                    size={isSmallScreen ? 24 : 28}
+                    weight="900"
+                    color={colors.amber400}
+                  >
                     Tài khoản
-                    <Text label weight="600" size={15} color={colors.label}>
+                    <Text
+                      label
+                      weight="600"
+                      size={isSmallScreen ? 14 : 15}
+                      color={colors.label}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                    >
                       {"  "}
                       Tập đoàn Kim Tín.
                     </Text>
@@ -171,11 +238,11 @@ const Login = () => {
                 </Column>
               </View>
 
-              <Spacer size={2} />
+              <Spacer size={isSmallScreen ? 1 : 2} />
               <Divider width={1.2} />
 
               <Column align="stretch" gap={6} style={styles.cardBody}>
-                <Spacer size={4} />
+                <Spacer size={isSmallScreen ? 2 : 4} />
 
                 <View style={{ marginHorizontal: 24 }}>
                   {/* Username */}
@@ -198,8 +265,14 @@ const Login = () => {
                           onChangeText={onChange}
                           onBlur={onBlur}
                           containerStyle={{ paddingHorizontal: 0 }}
-                          inputContainerStyle={styles.inputContainer}
-                          inputStyle={styles.inputText}
+                          inputContainerStyle={[
+                            styles.inputContainer,
+                            { backgroundColor: colors.neutral100 as string },
+                          ]}
+                          inputStyle={[
+                            styles.inputText,
+                            { color: colors.neutral900 as string },
+                          ]}
                           renderErrorMessage={false}
                         />
                         {errors.username?.message && (
@@ -211,7 +284,7 @@ const Login = () => {
                     )}
                   />
 
-                  <Spacer size={4} />
+                  <Spacer size={isSmallScreen ? 2 : 4} />
 
                   {/* Password */}
                   <Controller
@@ -234,8 +307,14 @@ const Login = () => {
                           onChangeText={onChange}
                           onBlur={onBlur}
                           containerStyle={{ paddingHorizontal: 0 }}
-                          inputContainerStyle={styles.inputContainer}
-                          inputStyle={styles.inputText}
+                          inputContainerStyle={[
+                            styles.inputContainer,
+                            { backgroundColor: colors.neutral100 as string },
+                          ]}
+                          inputStyle={[
+                            styles.inputText,
+                            { color: colors.neutral900 as string },
+                          ]}
                           renderErrorMessage={false}
                           rightIcon={
                             <TouchableOpacity
@@ -246,7 +325,7 @@ const Login = () => {
                                 name={showPassword ? "eye" : "eye-off"}
                                 type="feather"
                                 size={17}
-                                color={colors.label}
+                                color={colors.label as string}
                               />
                             </TouchableOpacity>
                           }
@@ -265,7 +344,7 @@ const Login = () => {
                 <Row
                   justify="space-between"
                   align="center"
-                  margin={[10, 12, 0, 12]}
+                  margin={[isSmallScreen ? 6 : 10, 12, 0, 12]}
                 >
                   <TouchableOpacity
                     style={styles.checkRow}
@@ -276,7 +355,11 @@ const Login = () => {
                       name={rememberUsername ? "check-square" : "square"}
                       type="feather"
                       size={16}
-                      color={rememberUsername ? colors.active : colors.label}
+                      color={
+                        (rememberUsername
+                          ? colors.active
+                          : colors.label) as string
+                      }
                     />
                     <Text bold color={colors.label} style={{ marginLeft: 6 }}>
                       Lưu tên đăng nhập
@@ -292,32 +375,40 @@ const Login = () => {
                   </TouchableOpacity>
                 </Row>
 
-                <Spacer size={3} />
+                <Spacer size={isSmallScreen ? 2 : 3} />
                 <Divider width={2} />
-                <Spacer size={0} />
+                <Spacer size={0.5} />
 
                 <TouchableOpacity
                   activeOpacity={0.8}
                   onPress={handleSubmit(onSubmit)}
-                  style={[styles.submitContainer, styles.submitBtn]}
+                  style={[
+                    styles.submitContainer,
+                    styles.submitBtn,
+                    {
+                      backgroundColor: colors.goldPrimary as string,
+                      shadowColor: colors.goldShadow as string,
+                    },
+                  ]}
                 >
-                  <Text size={17} weight="700" color="#2D2E35">
+                  <Text size={17} weight="700" color={colors.neutral800}>
                     ĐĂNG NHẬP
                   </Text>
                 </TouchableOpacity>
               </Column>
             </View>
           </Animated.View>
-
-          <Spacer size={12} />
-
-          <Text size={12} color={colors.label} center>
-            © Kim Tin Group
-          </Text>
-
-          <Spacer size={8} />
         </ScrollView>
       </KeyboardAvoidingView>
+      <VersionInfo />
+
+      {user?.listCompany && (
+        <CompanyPickerSheet
+          ref={companyPickerRef}
+          listCompany={user.listCompany}
+          onSelect={handleSelectCompany}
+        />
+      )}
     </Linear>
   );
 };
@@ -334,28 +425,23 @@ const styles = StyleSheet.create({
   },
   shadowWrapper: {
     marginHorizontal: 24,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 16 },
     shadowOpacity: 0.08,
     shadowRadius: 24,
     elevation: 8,
-    backgroundColor: colors.white,
     borderRadius: 32,
   },
   loginCard: {
-    backgroundColor: "#FAFAFA",
     borderRadius: 32,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.03)",
     overflow: "hidden",
   },
   cardHeader: {
-    backgroundColor: "#FEF9E7",
     paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 20,
+    paddingTop: SCREEN_HEIGHT < 750 ? 24 : 32,
+    paddingBottom: SCREEN_HEIGHT < 750 ? 16 : 20,
     borderRadius: 24,
-    margin: 8,
+    margin: SCREEN_HEIGHT < 750 ? 4 : 8,
   },
   cardBody: {
     paddingHorizontal: 16,
@@ -363,7 +449,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   inputContainer: {
-    backgroundColor: "#F2F2F4",
     borderWidth: 0,
     borderBottomWidth: 0,
     borderRadius: 12,
@@ -373,7 +458,6 @@ const styles = StyleSheet.create({
   inputText: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#1A1C1E",
   },
   fieldLabel: {
     letterSpacing: 0.5,
@@ -391,10 +475,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   submitBtn: {
-    backgroundColor: "#FFEE70",
     height: 56,
     borderRadius: 16,
-    shadowColor: "#FFC107",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -404,19 +486,20 @@ const styles = StyleSheet.create({
   },
   bgTopShape: {
     position: "absolute",
-    top: -SCREEN_HEIGHT * 0.1,
-    left: -SCREEN_WIDTH * 0.2,
-    width: SCREEN_WIDTH * 1.5,
-    height: SCREEN_HEIGHT * 0.38,
-    backgroundColor: "#FFF59D", // #FFF9C4
+    top: 0,
+    left: 0,
+    width: SCREEN_WIDTH,
+    height: SCREEN_HEIGHT * (SCREEN_HEIGHT < 750 ? 0.4 : 0.45),
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   bgBottomShape: {
     position: "absolute",
-    bottom: -SCREEN_HEIGHT * 0.08,
-    left: -SCREEN_WIDTH * 0.2,
-    width: SCREEN_WIDTH * 1.5,
-    height: SCREEN_HEIGHT * 0.35,
-    backgroundColor: "#45464E", // #37474F
+    left: 0,
+    width: SCREEN_WIDTH,
+    bottom: 0,
+    height: SCREEN_HEIGHT * 0.5,
+    backgroundColor: "#ffffff",
   },
 });
 

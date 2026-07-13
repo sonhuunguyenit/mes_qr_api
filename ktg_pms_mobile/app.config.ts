@@ -8,30 +8,36 @@ const result = loadEnv({ path: envPath, override: true });
 const env = result.parsed || {};
 
 export default ({ config }: ConfigContext): ExpoConfig => {
-  const APP_VERSION = env.APP_VERSION;
+  const APP_VERSION = env.APP_VERSION || "1.0.0";
 
   const expoConfig: ExpoConfig = {
     ...config,
-    owner: "ktg-pms",
-    name: env.APP_NAME,
-    slug: env.APP_SLUG,
+    owner: env.EXPO_OWNER || "ktg-pms",
+    name: env.APP_NAME || "KTG",
+    slug: env.APP_SLUG || "pms",
+    scheme: "ktgpms",
     version: APP_VERSION,
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
-    newArchEnabled: true,
+    newArchEnabled: false,
     assetBundlePatterns: ["**/*"],
     splash: {
-      image: "./assets/splash-icon.png",
+      image: "./assets/splash.png",
       resizeMode: "contain",
     },
-    runtimeVersion: env.APP_RUNTIME_VERSION,
+    notification: {
+      icon: "./assets/icon.png",
+      color: "#ffffff",
+    },
+    runtimeVersion: env.APP_RUNTIME_VERSION || "1.0.0",
     ios: {
       ...config.ios,
       icon: "./assets/icon.png",
       supportsTablet: false,
-      bundleIdentifier: env.IOS_BUNDLE_IDENTIFIER,
-      buildNumber: env.IOS_BUILD_NUMBER,
+      bundleIdentifier: env.IOS_BUNDLE_IDENTIFIER || "com.ktg.pms.pro",
+      associatedDomains: ["applinks:uatadmin-pms.kimtingroup.com"],
+      buildNumber: env.IOS_BUILD_NUMBER || "1",
       entitlements: {
         "aps-environment": "production",
       },
@@ -39,19 +45,37 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         ITSAppUsesNonExemptEncryption: false,
         UIBackgroundModes: ["remote-notification"],
       },
-      // googleServicesFile: env.GOOGLE_SERVICES_FILE_IOS,
+      googleServicesFile:
+        env.GOOGLE_SERVICES_FILE_IOS ||
+        "./src/@config/ios/production/GoogleService-Info.plist",
     },
     android: {
       ...config.android,
-      package: env.ANDROID_PACKAGE,
-      versionCode: parseInt(env.ANDROID_VERSION_CODE, 10),
+      package: env.ANDROID_PACKAGE || "com.ktg.pms.pro",
+      versionCode: parseInt(env.ANDROID_VERSION_CODE || "1", 10),
       icon: "./assets/icon.png",
       adaptiveIcon: {
         foregroundImage: "./assets/icon.png",
         backgroundColor: "#ffffff",
       },
-      // googleServicesFile: env.GOOGLE_SERVICES_FILE_ANDROID,
+      googleServicesFile:
+        env.GOOGLE_SERVICES_FILE_ANDROID ||
+        "./src/@config/android/production/google-services.json",
       softwareKeyboardLayoutMode: "pan",
+      edgeToEdgeEnabled: true,
+      intentFilters: [
+        {
+          action: "VIEW",
+          autoVerify: true,
+          data: [
+            {
+              scheme: "https",
+              host: "uatadmin-pms.kimtingroup.com",
+            },
+          ],
+          category: ["BROWSABLE", "DEFAULT"],
+        },
+      ],
     },
     web: {
       favicon: "./assets/favicon.png",
@@ -73,14 +97,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
       SSO_CLIENT_SECRET: env.SSO_CLIENT_SECRET,
       SSO_REDIRECT_URI: env.SSO_REDIRECT_URI,
       eas: {
-        projectId: "e41fa6b5-6fe3-4d3c-bff7-2197c5936019",
+        projectId: "c1ab6665-2706-4d71-8aae-19548f472996",
       },
     },
     updates: {
       enabled: true,
       checkAutomatically: "ON_LOAD",
       fallbackToCacheTimeout: 15000,
-      url: "",
+      url: "https://u.expo.dev/c1ab6665-2706-4d71-8aae-19548f472996",
     },
     plugins: [
       [
@@ -89,7 +113,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           ios: {
             useFrameworks: "static",
             deploymentTarget: "15.1",
-            // firebaseIOSSDKVersion: "10.29.0",
+            firebaseIOSSDKVersion: "10.29.0",
           },
           android: {
             compileSdkVersion: 35,
@@ -102,14 +126,14 @@ export default ({ config }: ConfigContext): ExpoConfig => {
           },
         },
       ],
-      // [
-      //   "@react-native-firebase/app",
-      //   {
-      //     useFrameworks: "static",
-      //   },
-      // ],
-      // "@react-native-firebase/messaging",
-      // "@react-native-firebase/crashlytics",
+      [
+        "@react-native-firebase/app",
+        {
+          useFrameworks: "static",
+        },
+      ],
+      "@react-native-firebase/messaging",
+      "@react-native-firebase/crashlytics",
       ["@react-native-community/datetimepicker"],
       [
         "expo-font",
@@ -119,6 +143,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             "./src/assets/fonts/Inter-Medium.ttf",
             "./src/assets/fonts/Inter-SemiBold.ttf",
             "./src/assets/fonts/Inter-Bold.ttf",
+            "./src/assets/fonts/Inter-ExtraBold.ttf",
+            "./src/assets/fonts/Inter-Black.ttf",
           ],
         },
       ],

@@ -33,7 +33,7 @@ export const Slider = ({
 }: SliderProps) => {
   const { colors, fonts } = useTheme();
 
-  const COLOR_MAP: Record<SliderColor, string> = {
+  const COLOR_MAP: Record<SliderColor, any> = {
     primary: colors.primary,
     success: colors.green,
     error: colors.red,
@@ -71,14 +71,15 @@ export const Slider = ({
       )}
       <SliderRE
         minimumTrackTintColor={resolvedColor}
-        maximumTrackTintColor={colors.disabledBg}
+        maximumTrackTintColor={colors.disabledBg as any}
         thumbTintColor={resolvedColor}
         thumbStyle={[
           styles.thumb,
           {
-            backgroundColor: colors.white,
+            backgroundColor: colors.card,
             borderColor: resolvedColor,
             borderWidth: 2,
+            shadowColor: colors.black as any,
           },
         ]}
         trackStyle={[styles.track, { borderRadius: 99 }]}
@@ -102,7 +103,6 @@ const styles = StyleSheet.create({
   thumb: {
     width: 24,
     height: 24,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,

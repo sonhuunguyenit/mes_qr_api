@@ -6,47 +6,22 @@ import {
   TextStyle,
   View,
   ViewStyle,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { Text } from "~/common";
 import { sizes } from "~/constants/sizes";
-
-export const STATUS_TYPES = {
-  success: {
-    name: "check-circle",
-    type: "material",
-    size: 80,
-    color: "#40cc4d",
-    titleColor: "#1e5e24",
-    messageColor: "#2d8a36",
-  },
-  error: {
-    name: "error",
-    type: "material",
-    size: 80,
-    color: "#f95959",
-    titleColor: "#7d2121",
-    messageColor: "#b03e3e",
-  },
-  warning: {
-    name: "warning",
-    type: "ionicon",
-    size: 80,
-    color: "#ffc000",
-    titleColor: "#664d03",
-    messageColor: "#856404",
-  },
-  info: {
-    name: "info",
-    type: "material",
-    size: 80,
-    color: "#3f97fd",
-    titleColor: "#084298",
-    messageColor: "#0d6efd",
-  },
-};
+import { useTheme } from "~/hooks/useTheme";
 
 export interface StatusProps {
-  type: "success" | "error" | "warning" | "info";
+  type:
+    | "success"
+    | "error"
+    | "warning"
+    | "info"
+    | "accept"
+    | "refuse"
+    | "recheck";
   title?: string;
   message?: string;
   style?: StyleProp<ViewStyle>;
@@ -64,39 +39,117 @@ export const Status = ({
   messageStyle,
   children,
 }: StatusProps) => {
-  const Status = STATUS_TYPES[type];
+  const { colors } = useTheme();
+
+  const STATUS_CONFIG = {
+    success: {
+      name: "check-circle",
+      type: "material",
+      size: 60,
+      color: colors.statusSuccess,
+      titleColor: colors.statusSuccessTitle,
+      messageColor: colors.statusMessage,
+    },
+    error: {
+      name: "error",
+      type: "material",
+      size: 60,
+      color: colors.statusError,
+      titleColor: colors.statusErrorTitle,
+      messageColor: colors.statusMessage,
+    },
+    warning: {
+      name: "warning",
+      type: "ionicon",
+      size: 60,
+      color: colors.statusWarning,
+      titleColor: colors.statusWarningTitle,
+      messageColor: colors.statusMessage,
+    },
+    info: {
+      name: "info",
+      type: "material",
+      size: 60,
+      color: colors.statusInfo,
+      titleColor: colors.statusInfoTitle,
+      messageColor: colors.statusMessage,
+    },
+    accept: {
+      name: "fountain-pen-tip",
+      type: "material-community",
+      size: 75,
+      color: colors.statusInfo,
+      titleColor: colors.statusInfoTitle,
+      messageColor: colors.statusMessage,
+    },
+    refuse: {
+      name: "hand-back-right-off",
+      type: "material-community",
+      size: 60,
+      color: colors.statusError,
+      titleColor: colors.statusErrorTitle,
+      messageColor: colors.statusMessage,
+    },
+    recheck: {
+      name: "file-document-edit-outline",
+      type: "material-community",
+      size: 60,
+      color: colors.statusWarning,
+      titleColor: colors.statusWarningTitle,
+      messageColor: colors.statusMessage,
+    },
+  };
+
+  const currentStatus = STATUS_CONFIG[type];
 
   return (
-    <View style={[localStyles.container, style]}>
-      <Icon {...Status} />
-      <View style={localStyles.textContainer}>
-        {title && (
-          <Text
-            weight="600"
-            style={[
-              localStyles.title,
-              { color: Status.titleColor },
-              titleStyle,
-            ]}
-          >
-            {title}
-          </Text>
-        )}
-        {message && (
-          <Text
-            weight="500"
-            style={[
-              localStyles.message,
-              { color: Status.messageColor },
-              messageStyle,
-            ]}
-          >
-            {message}
-          </Text>
-        )}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <View style={[localStyles.container, style]}>
+        <View
+          style={{
+            backgroundColor: (currentStatus.color as string) + "15",
+            height: 100,
+            width: 100,
+            borderRadius: 999,
+            marginBottom: 10,
+            borderWidth: 0.25,
+            borderColor: currentStatus.color,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Icon {...(currentStatus as any)} />
+        </View>
+
+        <View style={localStyles.textContainer}>
+          {title && (
+            <Text
+              weight="600"
+              style={[
+                localStyles.title,
+                { color: currentStatus.titleColor },
+                titleStyle,
+              ]}
+            >
+              {title}
+            </Text>
+          )}
+          {message && (
+            <Text
+              weight="500"
+              style={[
+                localStyles.message,
+                { color: currentStatus.messageColor },
+                messageStyle,
+              ]}
+            >
+              {message}
+            </Text>
+          )}
+        </View>
+        {children}
       </View>
-      {children}
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -109,7 +162,7 @@ const localStyles = StyleSheet.create({
     marginTop: 5,
   },
   title: {
-    fontSize: sizes.fontSize.xxl,
+    fontSize: sizes.fontSize.lg,
     textAlign: "center",
   },
   message: {
@@ -119,7 +172,6 @@ const localStyles = StyleSheet.create({
     fontSize: sizes.fontSize.base,
   },
 });
-
 export const StatusBadge = ({
   value,
   color,
@@ -127,17 +179,19 @@ export const StatusBadge = ({
   borderColor,
 }: {
   value: string;
-  color?: string;
+  color?: any;
   bgColor?: string;
   borderColor?: string;
 }) => {
+  const { colors } = useTheme();
   return (
     <View
       style={[
         badgeStyles.statusBadge,
         {
-          backgroundColor: bgColor || color + "15" || "#f0f0f0",
-          borderColor: borderColor || color || "#d9d9d9",
+          backgroundColor:
+            bgColor || (color ? color + "15" : (colors.neutral15 as string)),
+          borderColor: borderColor || color || (colors.neutral300 as string),
         },
       ]}
     >
@@ -152,7 +206,7 @@ const badgeStyles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 20, // Pill shape
+    borderRadius: 20,
     alignSelf: "flex-start",
     minHeight: 24,
     justifyContent: "center",

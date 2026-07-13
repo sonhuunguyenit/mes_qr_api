@@ -30,4 +30,6 @@ export interface InboundFilterParams {
   createdAt?: Date;
   createdByName?: string;
   statusName?: string;
+  poIds?: string;
+  poId?: string;
 }

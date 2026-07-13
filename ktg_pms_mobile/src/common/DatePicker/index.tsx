@@ -9,7 +9,7 @@ import moment from "moment";
 
 interface DatePickerProps {
   label?: string;
-  value: Date;
+  value?: Date | null;
   onChange: (date: Date) => void;
   errorMessage?: string;
   editable?: boolean;
@@ -50,7 +50,7 @@ export const DatePicker = memo(
               fontFamily: fonts.medium,
               color: colors.label,
               fontSize: sizes.fontSize.base,
-              marginBottom: 8,
+              marginBottom: 5,
             }}
           >
             {label}

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { poService } from "~/services/po/po.service";
 import { POFilterParams } from "~/services/po/po.type";
 import {
@@ -41,14 +41,23 @@ export const usePOFilterOptions = () => {
   });
 };
 
-export const usePOList = (params: POFilterParams, isApprove?: boolean) => {
-  return useQuery({
-    queryKey: [isApprove ? "po-approve-list" : "po-list", params],
-    queryFn: () => poService.getPOList(params),
-    select: (res: any) => ({
-      data: res.data?.[0] || [],
-      total: res.data?.[1] || 0,
-    }),
+export const usePOList = (params: POFilterParams) => {
+  return useInfiniteQuery({
+    queryKey: ["po-list", params],
+    queryFn: ({ pageParam = 1 }) =>
+      poService.getPOList({
+        ...params,
+        pageIndex: pageParam as number,
+      }),
+    getNextPageParam: (lastPage: any, allPages) => {
+      const total = lastPage.data?.[1] || 0;
+      const currentCount = allPages.reduce(
+        (acc, page) => acc + (page.data?.[0]?.length || 0),
+        0,
+      );
+      return currentCount < total ? allPages.length + 1 : undefined;
+    },
+    initialPageParam: 1,
   });
 };
 

@@ -82,32 +82,30 @@ export const Card = ({
             : (backgroundColor ?? colors.card),
           borderRadius: radius.card,
           borderWidth: skeleton ? 0 : 1,
-          borderColor: "#F1F5F9", // Subtle border that looks better than heavy shadow
+          borderColor: colors.divider,
+          shadowColor: shadow && !skeleton ? (colors.black as any) : undefined,
+          paddingHorizontal: skeleton ? 0 : 5,
+          paddingVertical: 8,
         },
         style,
       ]}
+      onLayout={handleLayout}
     >
-      <View onLayout={handleLayout} style={styles.innerContainer}>
-        <View
-          style={{ flex: 1, padding: skeleton ? 0 : (padding ?? spacing.md) }}
-        >
-          {/* Custom Skeleton or Main Content */}
-          {children}
+      <View style={styles.innerContainer}>
+        {children}
 
-          {/* Full Skeleton Overlay */}
-          {skeleton && !children && cardLayout.width > 0 && (
-            <Skeleton
-              animation="wave"
-              width={cardLayout.width}
-              height={cardLayout.height}
-              skeletonStyle={{
-                backgroundColor: colors.surface,
-                borderRadius: radius.card,
-              }}
-              style={styles.skeletonOverlay}
-            />
-          )}
-        </View>
+        {skeleton && !children && cardLayout.width > 0 && (
+          <Skeleton
+            animation="wave"
+            width={cardLayout.width}
+            height={cardLayout.height}
+            skeletonStyle={{
+              backgroundColor: colors.surface,
+              borderRadius: radius.card,
+            }}
+            style={styles.skeletonOverlay}
+          />
+        )}
       </View>
     </Animated.View>
   );
@@ -132,13 +130,12 @@ const styles = StyleSheet.create({
   shadowWrapper: {
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.03, // Extremely light
-        shadowRadius: 25, // Large spread
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 1, // Minimum to avoid black muddy bars
+        elevation: 1,
       },
     }),
   },

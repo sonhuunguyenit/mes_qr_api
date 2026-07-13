@@ -1,5 +1,5 @@
-import { View, ViewStyle } from "react-native";
 import React from "react";
+import { View } from "react-native";
 import { useTheme } from "~/hooks/useTheme";
 
 type Props = {

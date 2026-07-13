@@ -1,0 +1,50 @@
+import React, { memo } from "react";
+import { StyleSheet, View } from "react-native";
+import { Card, Row, Skeleton, Spacer } from "~/common";
+import globalStyle from "~/styles/global-style";
+
+import { useTheme } from "~/hooks/useTheme";
+
+// main skeleton it will apply all items later
+const SupplierLockServiceItemSkeleton = () => {
+  const { colors } = useTheme();
+  return (
+    <Card style={globalStyle.item}>
+      {/* 1. Status Tag Row */}
+      <Row justify="space-between">
+        <Skeleton width={120} height={20} radius={20} />
+        <Skeleton width={120} height={20} radius={20} />
+      </Row>
+
+      <Spacer size={12} />
+
+      {/* 2. Identifier Section */}
+      <Row align="center">
+        <Skeleton width={28} height={20} radius={10} />
+        <Spacer size={10} horizontal />
+        <Skeleton width="100%" height={20} />
+      </Row>
+
+      <Spacer size={12} />
+
+      {/* 3. Consolidated Metadata Tag Cloud */}
+      <View style={globalStyle.tagRow}>
+        {/* Uses & External Mat Group (Full Width Skeletons) */}
+        <Skeleton width="95%" height={24} radius={20} />
+        <Skeleton width="75%" height={24} radius={20} />
+        <Skeleton width="95%" height={24} radius={20} />
+        <Skeleton width="75%" height={24} radius={20} />
+        <Skeleton width="95%" height={24} radius={20} />
+        <Skeleton width="75%" height={24} radius={20} />
+      </View>
+    </Card>
+  );
+};
+
+export default SupplierLockServiceItemSkeleton;
+
+const styles = StyleSheet.create({
+  divider: {
+    height: 1,
+  },
+});

@@ -4,6 +4,7 @@ import { authEvents } from "~/utils/events";
 import StorageHelper from "~/utils/storage";
 import { useQueryClient } from "@tanstack/react-query";
 import { jwtDecode } from "jwt-decode";
+import { LstPermission } from "~/services/auth/auth.type";
 import React, {
   createContext,
   useCallback,
@@ -19,6 +20,9 @@ export type UserStorage = {
   employeeOrgPosition: string;
   departmentId: string | null;
   companyId: string;
+  lstPermission?: LstPermission[];
+  listCompany?: { id: string; name: string; code?: string }[];
+  userId?: string;
 };
 
 interface AuthContextProps {
@@ -41,6 +45,7 @@ const DEFAULT_USER: UserStorage = {
   employeeOrgPosition: "",
   departmentId: null,
   companyId: "",
+  lstPermission: [],
 };
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {

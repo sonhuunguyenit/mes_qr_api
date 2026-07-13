@@ -1,37 +1,60 @@
-import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { Icon } from "@rneui/themed";
-import moment from "moment";
-import React, { useState } from "react";
-import { StyleSheet, View, TouchableOpacity } from "react-native";
 import {
-  Button,
-  DatePicker,
-  Input,
-  Row,
-  SelectPicker,
-  Spacer,
-  Text,
-} from "~/common";
+  BottomSheetScrollView,
+  BottomSheetTextInput,
+} from "@gorhom/bottom-sheet";
+import moment from "moment";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Keyboard, Platform, View } from "react-native";
+import { Column, DatePicker, Input, Row, SelectPicker } from "~/common";
+import { FooterSheet, HeaderSheet } from "~/components";
+import { ColumnFilter } from "~/components/ColumnFilter";
+import { PO_STATUS } from "~/enums";
+import { useSheet } from "~/contexts/SheetContext";
 import { useTheme } from "~/hooks/useTheme";
 import { POFilterParams } from "~/services/po/po.type";
 import { usePOFilterOptions } from "../hooks";
+import { BOTTOM_SHEET_TIME_LOADING } from "~/constants";
+import globalStyle from "~/styles/global-style";
 
 interface POFilterSheetProps {
   initialFilters: POFilterParams;
   onApply: (filters: POFilterParams, isReset?: boolean) => void;
   onClose: () => void;
-  isApprove?: boolean;
 }
 
 const POFilterSheet = ({
   initialFilters,
   onApply,
   onClose,
-  isApprove,
 }: POFilterSheetProps) => {
-  const { colors, radius } = useTheme();
+  const { spacing, colors } = useTheme();
   const [filters, setFilters] = useState<POFilterParams>(initialFilters);
+  const [isReady, setIsReady] = useState(false);
   const { data: options } = usePOFilterOptions();
+  const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+
+  const { setIsSheetLoading } = useSheet();
+
+  useEffect(() => {
+    setIsSheetLoading(true);
+    const timer = setTimeout(() => {
+      setIsReady(true);
+      setIsSheetLoading(false);
+    }, BOTTOM_SHEET_TIME_LOADING);
+
+    const showL = Keyboard.addListener("keyboardDidShow", () =>
+      setKeyboardVisible(true),
+    );
+    const hideL = Keyboard.addListener("keyboardDidHide", () =>
+      setKeyboardVisible(false),
+    );
+    return () => {
+      setIsSheetLoading(false);
+      clearTimeout(timer);
+      showL.remove();
+      hideL.remove();
+    };
+  }, []);
 
   const handleApply = () => {
     onApply(filters);
@@ -40,11 +63,11 @@ const POFilterSheet = ({
 
   const handleReset = () => {
     const resetFilters: POFilterParams = {
-      status: undefined,
+      status: PO_STATUS.WAITING_APPROVAL,
       budgetStatus: undefined,
       referenceSourceType: undefined,
-      startDate: moment().subtract(1, "month").format("YYYY-MM-DD"),
-      endDate: moment().format("YYYY-MM-DD"),
+      startDate: undefined,
+      endDate: undefined,
       code: "",
       codeSap: "",
       supplierName: "",
@@ -62,56 +85,35 @@ const POFilterSheet = ({
     key: K,
     value: POFilterParams[K],
   ) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
+    setFilters((prev: POFilterParams) => ({ ...prev, [key]: value }));
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <Icon name="sliders" type="feather" size={22} color={colors.label} />
-        <Text bold size={16} color={colors.title}>
-          Bộ lọc tìm kiếm PO
-        </Text>
-        <TouchableOpacity
-          onPress={onClose}
-          style={styles.closeBtn}
-          activeOpacity={0.7}
-        >
-          <Icon name="x" type="feather" size={24} color={colors.label} />
-        </TouchableOpacity>
-      </View>
+    <View style={{ flex: 1 }}>
+      <HeaderSheet type="filter" onClose={onClose} />
 
-      <BottomSheetScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { flexGrow: 1 }]}
-        style={{ flex: 1, backgroundColor: colors.background }}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={{ paddingBottom: 20 }}>
-          {/* 1. Trạng thái & Ngân sách */}
-          <View style={styles.section}>
-            <Row>
-              <View style={{ flex: 1 }}>
-                <Text bold color={colors.title} style={styles.sectionTitle}>
-                  Trạng thái
-                </Text>
-                <SelectPicker
-                  listSelection={options?.statuses || []}
-                  value={filters.status}
-                  onSelect={(item: Record<string, any>) =>
-                    updateFilter("status", item.value)
-                  }
-                  placeholder="Chọn trạng thái"
-                  labelKeys={["label"]}
-                  valueKey="value"
-                  search={true}
-                />
-              </View>
-              <Spacer size={12} horizontal />
-              <View style={{ flex: 1 }}>
-                <Text bold color={colors.title} style={styles.sectionTitle}>
-                  Ngân sách
-                </Text>
+      {isReady ? (
+        <BottomSheetScrollView
+          style={{
+            flex: 1,
+            padding: spacing.sm,
+            gap: 10,
+            backgroundColor: colors.lgrayBg,
+          }}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets={Platform.OS === "android"}
+          contentContainerStyle={{ flexGrow: 1 }}
+        >
+          <Column
+            style={{
+              gap: spacing.sm,
+              marginTop: spacing.sm,
+              paddingBottom: 20,
+            }}
+          >
+            <ColumnFilter
+              label="Ngân sách"
+              value={
                 <SelectPicker
                   listSelection={options?.budgetStatuses || []}
                   value={filters.budgetStatus}
@@ -123,269 +125,185 @@ const POFilterSheet = ({
                   valueKey="value"
                   search={false}
                 />
-              </View>
-            </Row>
-          </View>
+              }
+              full
+              underline={false}
+            />
 
-          {/* 2. Công ty & Nguồn tham chiếu */}
-          <View style={styles.section}>
-            <Row>
-              <View style={{ flex: 1 }}>
-                <Text bold color={colors.title} style={styles.sectionTitle}>
-                  Công ty
-                </Text>
-                <SelectPicker
-                  listSelection={options?.companies || []}
-                  value={filters.companyId}
-                  onSelect={(item: Record<string, any>) =>
-                    updateFilter("companyId", item.value)
-                  }
-                  placeholder="Chọn công ty"
-                  labelKeys={["label"]}
-                  valueKey="value"
-                  search={true}
-                />
-              </View>
-              <Spacer size={12} horizontal />
-              <View style={{ flex: 1 }}>
-                <Text bold color={colors.title} style={styles.sectionTitle}>
-                  Nguồn tham chiếu
-                </Text>
-                <SelectPicker
-                  listSelection={options?.referenceSources || []}
-                  value={filters.referenceSourceType}
-                  onSelect={(item: Record<string, any>) =>
-                    updateFilter("referenceSourceType", item.value)
-                  }
-                  placeholder="Chọn nguồn"
-                  labelKeys={["label"]}
-                  valueKey="value"
-                />
-              </View>
+            <Row gap={spacing.sm}>
+              <ColumnFilter
+                label="Công ty"
+                value={
+                  <SelectPicker
+                    listSelection={options?.companies || []}
+                    value={filters.companyId}
+                    onSelect={(item: Record<string, any>) =>
+                      updateFilter("companyId", item.value)
+                    }
+                    placeholder="Chọn công ty"
+                    labelKeys={["label"]}
+                    valueKey="value"
+                    search={true}
+                  />
+                }
+                underline={false}
+              />
+              <ColumnFilter
+                label="Nguồn tham chiếu"
+                value={
+                  <SelectPicker
+                    listSelection={options?.referenceSources || []}
+                    value={filters.referenceSourceType}
+                    onSelect={(item: Record<string, any>) =>
+                      updateFilter("referenceSourceType", item.value)
+                    }
+                    placeholder="Chọn nguồn"
+                    labelKeys={["label"]}
+                    valueKey="value"
+                  />
+                }
+                underline={false}
+              />
             </Row>
-          </View>
 
-          {/* 3. Số PO PMS & SAP */}
-          <View style={styles.section}>
-            <Row>
-              <View style={{ flex: 1 }}>
-                <Text bold color={colors.title} style={styles.sectionTitle}>
-                  Mã PO PMS
-                </Text>
-                <Input
-                  placeholder="Nhập mã PMS"
-                  value={filters.code}
-                  onChangeText={(val) => updateFilter("code", val)}
-                />
-              </View>
-              <Spacer size={12} horizontal />
-              <View style={{ flex: 1 }}>
-                <Text bold color={colors.title} style={styles.sectionTitle}>
-                  Mã PO SAP
-                </Text>
-                <Input
-                  placeholder="Nhập mã SAP"
-                  value={filters.codeSap}
-                  onChangeText={(val) => updateFilter("codeSap", val)}
-                />
-              </View>
+            <Row gap={spacing.sm}>
+              <ColumnFilter
+                label="Mã PO PMS"
+                value={
+                  <Input
+                    placeholder="Nhập mã PMS"
+                    value={filters.code}
+                    onChangeText={(val) => updateFilter("code", val)}
+                    InputComponent={BottomSheetTextInput}
+                  />
+                }
+                underline={false}
+              />
+              <ColumnFilter
+                label="Mã PO SAP"
+                value={
+                  <Input
+                    placeholder="Nhập mã SAP"
+                    value={filters.codeSap}
+                    onChangeText={(val) => updateFilter("codeSap", val)}
+                    InputComponent={BottomSheetTextInput}
+                  />
+                }
+                underline={false}
+              />
             </Row>
-          </View>
 
-          {/* 4. Chứng từ tham chiếu & Đơn vị tiền tệ */}
-          <View style={styles.section}>
-            <Row>
-              <View style={{ flex: 1 }}>
-                <Text bold color={colors.title} style={styles.sectionTitle}>
-                  Chứng từ tham chiếu
-                </Text>
-                <Input
-                  placeholder="Nhập số/mã"
-                  value={filters.referenceSourceNumbers}
-                  onChangeText={(val) =>
-                    updateFilter("referenceSourceNumbers", val)
-                  }
-                />
-              </View>
-              <Spacer size={12} horizontal />
-              <View style={{ flex: 1 }}>
-                <Text bold color={colors.title} style={styles.sectionTitle}>
-                  Đơn vị tiền tệ
-                </Text>
-                <Input
-                  placeholder="VND, USD..."
-                  value={filters.currencyCode}
-                  onChangeText={(val) => updateFilter("currencyCode", val)}
-                />
-              </View>
+            <Row gap={spacing.sm}>
+              <ColumnFilter
+                label="Chứng từ tham chiếu"
+                value={
+                  <Input
+                    placeholder="Nhập số/mã"
+                    value={filters.referenceSourceNumbers}
+                    onChangeText={(val) =>
+                      updateFilter("referenceSourceNumbers", val)
+                    }
+                    InputComponent={BottomSheetTextInput}
+                  />
+                }
+                underline={false}
+              />
+              <ColumnFilter
+                label="Đơn vị tiền tệ"
+                value={
+                  <Input
+                    placeholder="VND, USD..."
+                    value={filters.currencyCode}
+                    onChangeText={(val) => updateFilter("currencyCode", val)}
+                    InputComponent={BottomSheetTextInput}
+                  />
+                }
+                underline={false}
+              />
             </Row>
-          </View>
 
-          {/* 5. Nhà cung cấp */}
-          <View style={styles.section}>
-            <Text bold color={colors.title} style={styles.sectionTitle}>
-              Nhà cung cấp
-            </Text>
-            <Input
-              placeholder="Tên nhà cung cấp"
-              value={filters.supplierName}
-              onChangeText={(val) => updateFilter("supplierName", val)}
-              rightIcon={
-                <Icon
-                  name="truck"
-                  type="feather"
-                  size={20}
-                  color={colors.label}
+            <ColumnFilter
+              label="Nhà cung cấp"
+              value={
+                <Input
+                  placeholder="Tên nhà cung cấp"
+                  value={filters.supplierName}
+                  onChangeText={(val) => updateFilter("supplierName", val)}
+                  InputComponent={BottomSheetTextInput}
                 />
               }
+              full
+              underline={false}
             />
-          </View>
 
-          {/* 6. Người tạo */}
-          <View style={styles.section}>
-            <Text bold color={colors.title} style={styles.sectionTitle}>
-              Người tạo
-            </Text>
-            <Input
-              placeholder="Tên người tạo"
-              value={filters.employeeName}
-              onChangeText={(val) => updateFilter("employeeName", val)}
-              rightIcon={
-                <Icon
-                  name="user"
-                  type="feather"
-                  size={20}
-                  color={colors.label}
+            <ColumnFilter
+              label="Người tạo"
+              value={
+                <Input
+                  placeholder="Tên người tạo"
+                  value={filters.employeeName}
+                  onChangeText={(val) => updateFilter("employeeName", val)}
+                  InputComponent={BottomSheetTextInput}
                 />
               }
+              full
+              underline={false}
             />
-          </View>
 
-          {/* 7. Ngày tạo */}
-          <View style={styles.section}>
-            <Text bold color={colors.title} style={styles.sectionTitle}>
-              Ngày tạo
-            </Text>
-            <Row>
-              <View style={{ flex: 1 }}>
-                <DatePicker
-                  label="Từ"
-                  value={
-                    filters.startDate
-                      ? moment(filters.startDate).toDate()
-                      : new Date()
-                  }
-                  onChange={(date) =>
-                    updateFilter("startDate", moment(date).format("YYYY-MM-DD"))
-                  }
-                />
-              </View>
-              <Spacer size={12} horizontal />
-              <View style={{ flex: 1 }}>
-                <DatePicker
-                  label="Đến"
-                  value={
-                    filters.endDate
-                      ? moment(filters.endDate).toDate()
-                      : new Date()
-                  }
-                  onChange={(date) =>
-                    updateFilter("endDate", moment(date).format("YYYY-MM-DD"))
-                  }
-                />
-              </View>
-            </Row>
-          </View>
-
-          <Spacer size={20} />
+            <ColumnFilter
+              label="Ngày tạo"
+              value={
+                <Row gap={12}>
+                  <DatePicker
+                    label="Từ"
+                    value={
+                      filters.startDate
+                        ? moment(filters.startDate).toDate()
+                        : undefined
+                    }
+                    onChange={(date) =>
+                      updateFilter(
+                        "startDate",
+                        moment(date).format("YYYY-MM-DD"),
+                      )
+                    }
+                    containerStyle={{ flex: 1 }}
+                  />
+                  <DatePicker
+                    label="Đến"
+                    value={
+                      filters.endDate
+                        ? moment(filters.endDate).toDate()
+                        : undefined
+                    }
+                    onChange={(date) =>
+                      updateFilter("endDate", moment(date).format("YYYY-MM-DD"))
+                    }
+                    containerStyle={{ flex: 1 }}
+                  />
+                </Row>
+              }
+              full
+              underline={false}
+              last
+            />
+          </Column>
+        </BottomSheetScrollView>
+      ) : (
+        <View style={globalStyle.loadingContainer}>
+          <ActivityIndicator
+            size="large"
+            color={useTheme().colors.primary}
+            style={globalStyle.loadingIndicator}
+          />
         </View>
-      </BottomSheetScrollView>
+      )}
 
-      <View style={[styles.footer, { borderTopColor: colors.border + "50" }]}>
-        <Row>
-          <View style={{ flex: 1 }}>
-            <Button
-              title="Áp dụng bộ lọc"
-              onPress={handleApply}
-              containerStyle={styles.applyBtnContainer}
-              buttonStyle={styles.applyBtn}
-              titleStyle={styles.applyBtnTitle}
-            />
-          </View>
-          <Spacer size={12} horizontal />
-          <TouchableOpacity
-            onPress={handleReset}
-            style={[
-              styles.resetBtn,
-              { backgroundColor: colors.surface, borderRadius: radius.button },
-            ]}
-          >
-            <Icon
-              name="refresh-cw"
-              type="feather"
-              size={22}
-              color={colors.title}
-            />
-          </TouchableOpacity>
-        </Row>
-      </View>
+      {isReady && (Platform.OS === "ios" || !isKeyboardVisible) && (
+        <FooterSheet onApply={handleApply} onReset={handleReset} />
+      )}
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  closeBtn: {
-    paddingVertical: 10,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    flexGrow: 1,
-  },
-  section: {
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    marginBottom: 5,
-    fontSize: 12,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    paddingBottom: 12,
-  },
-  resetBtn: {
-    width: 50,
-    height: 50,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#F1F5F9",
-  },
-  applyBtnContainer: {
-    height: 50,
-  },
-  applyBtn: {
-    height: 50,
-    borderRadius: 12,
-  },
-  applyBtnTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-  },
-});
-
-export default POFilterSheet;
+export default React.memo(POFilterSheet);

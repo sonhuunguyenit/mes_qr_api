@@ -1,11 +1,9 @@
-import { Row } from "../Row";
-import { Text } from "../Text";
-import { colors } from "~/constants/colors";
 import { Icon, IconProps } from "@rneui/base";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ColorValue,
   StyleSheet,
+  TextStyle,
   TouchableOpacity,
   View,
   ViewStyle,
@@ -16,6 +14,8 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { Row } from "../Row";
+import { Text } from "../Text";
 import { useTheme } from "~/hooks/useTheme";
 
 interface CollapseProps {
@@ -25,14 +25,14 @@ interface CollapseProps {
   children: React.ReactNode;
   style?: ViewStyle;
   headerStyle?: ViewStyle;
+  containerStyle?: ViewStyle;
   collapsible?: boolean;
   defaultExpanded?: boolean;
   expanded?: boolean;
   onToggle?: (expanded: boolean) => void;
   titleColor?: ColorValue;
   iconColor?: ColorValue;
-  noHeaderPadding?: boolean;
-  noContentPadding?: boolean;
+  titleStyle?: TextStyle;
 }
 
 export const Collapse = ({
@@ -42,16 +42,16 @@ export const Collapse = ({
   children,
   style,
   headerStyle,
+  containerStyle,
   collapsible = false,
-  defaultExpanded = true,
+  defaultExpanded = false,
   expanded: expandedProp,
   onToggle,
   titleColor,
   iconColor,
-  noHeaderPadding = false,
-  noContentPadding = false,
+  titleStyle,
 }: CollapseProps) => {
-  const { colors, radius, spacing } = useTheme();
+  const { colors } = useTheme();
   const [isExpandedInternal, setIsExpandedInternal] = useState(
     expandedProp !== undefined ? expandedProp : defaultExpanded,
   );
@@ -61,7 +61,7 @@ export const Collapse = ({
   const contentHeight = useSharedValue(0);
   const isFirstRender = useSharedValue(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (expandedProp !== undefined) {
       setIsExpandedInternal(expandedProp);
     }
@@ -108,110 +108,105 @@ export const Collapse = ({
   const HeaderWrapper = collapsible ? TouchableOpacity : View;
 
   return (
-    <View
-      style={[
-        {
-          backgroundColor: colors.card,
-          borderRadius: radius.card,
-        },
-        style,
-      ]}
-    >
-      {title && (
-        <HeaderWrapper
-          onPress={collapsible ? toggleExpand : undefined}
-          activeOpacity={0.7}
-          style={[
-            styles.headerTouchable,
-            noHeaderPadding && { padding: 0 },
-            headerStyle,
-          ]}
-        >
-          <Row
-            gap={8}
-            align="center"
-            style={[styles.sectionHeader, noHeaderPadding && { padding: 0 }]}
-            full
+    <View style={[styles.container, { backgroundColor: colors.card }, style]}>
+      <View style={{ borderRadius: 12, overflow: "hidden", width: "100%" }}>
+        {title && (
+          <HeaderWrapper
+            onPress={collapsible ? toggleExpand : undefined}
+            activeOpacity={0.7}
+            style={[styles.headerTouchable, headerStyle]}
           >
-            {icon && (
-              <Icon
-                size={18}
-                color={iconColor || titleColor || colors.primary}
-                {...icon}
-              />
-            )}
-            {typeof title === "string" ? (
-              <Text
-                bold
-                size={15}
-                color={titleColor || colors.title}
-                style={{
-                  flex: 1,
-                  includeFontPadding: false,
-                  textAlignVertical: "center",
-                  lineHeight: 20, // Match icon baseline
-                }}
-              >
-                {title}
-              </Text>
-            ) : (
-              <View style={{ flex: 1 }}>{title}</View>
-            )}
-            {rightSide && rightSide}
-            {collapsible && (
-              <Animated.View style={animatedChevronStyle}>
-                <Icon
-                  name="chevron-up"
-                  type="feather"
-                  size={20}
-                  color={iconColor || titleColor || colors.label}
-                />
-              </Animated.View>
-            )}
-          </Row>
-        </HeaderWrapper>
-      )}
+            <Row gap={5} align="center" style={[styles.sectionHeader]} full>
+              {icon && (
+                <Icon size={18} color={iconColor || colors.title} {...icon} />
+              )}
+              {typeof title === "string" ? (
+                <Text
+                  bold
+                  size={15}
+                  color={titleColor || colors.title}
+                  style={[
+                    {
+                      flex: 1,
+                      includeFontPadding: false,
+                      textAlignVertical: "center",
+                    },
+                    titleStyle,
+                  ]}
+                >
+                  {title}
+                </Text>
+              ) : (
+                <View style={{ flex: 1 }}>{title}</View>
+              )}
+              {rightSide && rightSide}
+              {collapsible && (
+                <Animated.View style={animatedChevronStyle}>
+                  <Icon
+                    name="chevron-up"
+                    type="feather"
+                    size={20}
+                    color={iconColor || colors.title}
+                  />
+                </Animated.View>
+              )}
+            </Row>
+          </HeaderWrapper>
+        )}
 
-      <Animated.View
-        style={[
-          collapsible ? styles.collapsedContent : undefined,
-          animatedHeightStyle,
-        ]}
-      >
-        <View
-          onLayout={(e) => {
-            const h = e.nativeEvent.layout.height;
-            if (h > 0 && contentHeight.value === 0 && defaultExpanded) {
-              // First time setting height for expanded component
-              contentHeight.value = h;
-            } else {
-              contentHeight.value = h;
-            }
-          }}
-          style={[
-            collapsible ? styles.measureWrapper : undefined,
-            !noContentPadding && styles.contentPadding,
-          ]}
-        >
-          {children}
-        </View>
-      </Animated.View>
+        {!collapsible ? (
+          <View style={styles.contentPadding}>{children}</View>
+        ) : (
+          <Animated.View
+            style={[
+              styles.collapsedContent,
+              animatedHeightStyle,
+              { width: "100%" },
+            ]}
+          >
+            <View
+              onLayout={(e) => {
+                const h = e.nativeEvent.layout.height;
+                if (h > 0 && contentHeight.value === 0 && defaultExpanded) {
+                  contentHeight.value = h;
+                } else {
+                  contentHeight.value = h;
+                }
+              }}
+              style={[
+                styles.measureWrapper,
+                styles.contentPadding,
+                containerStyle,
+              ]}
+            >
+              {children}
+            </View>
+          </Animated.View>
+        )}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {},
-  headerTouchable: {
-    padding: 16,
+  container: {
+    borderRadius: 10,
     width: "100%",
+    alignSelf: "stretch",
+  },
+  headerTouchable: {
+    paddingVertical: 16,
+    paddingHorizontal: 10,
+    width: "100%",
+    justifyContent: "center",
   },
   sectionHeader: {
     paddingVertical: 0,
     marginBottom: 0,
   },
   contentPadding: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 5,
+    paddingTop: 8,
     paddingBottom: 8,
   },
   collapsedContent: {

@@ -1,107 +1,121 @@
-import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
+import { useAuth } from "~/hooks/useAuth";
+import { authService } from "~/services/auth/auth.service";
 import { homeService } from "~/services/home/home.service";
-import { useTheme } from "~/hooks/useTheme";
-import { getIconForType } from "../utils";
-import { Module, ApprovalGroup } from "../types";
+import { ApprovalItem } from "~/services/home/home.type";
+import { notificationService } from "~/services/notification/notification.service";
+import { STATICS_APPROVE_MODULES } from "../constants";
+import { Module, ModuleItem } from "../types";
 
 export const useHome = () => {
-  const { colors } = useTheme();
+  const { user } = useAuth();
 
   const {
     data: approvalData,
-    isLoading,
-    refetch,
-  } = useQuery<ApprovalGroup[]>({
-    queryKey: ["approval-counts"],
+    isLoading: isLoadingApproval,
+    refetch: refetchApproval,
+  } = useQuery({
+    queryKey: ["home-approval-list", user?.companyId],
     queryFn: async () => {
-      const response = await homeService.getApprovalCounts();
-      return response.data;
+      try {
+        const res = await homeService.getApprovalCounts();
+        return res.data as ApprovalItem[];
+      } catch (error: any) {
+        // Auto-heal: If company context is lost on the server, update company and retry
+        if (user?.companyId) {
+          try {
+            await authService.updateCompany(user.companyId);
+            const res = await homeService.getApprovalCounts();
+            return res.data as ApprovalItem[];
+          } catch (retryError) {
+            // Fail silently on retry to throw original error
+          }
+        }
+
+        throw error;
+      }
     },
+    enabled: !!user?.companyId,
+    staleTime: 30_000,
   });
 
+  const {
+    data: notifyData,
+    isLoading: isLoadingNotify,
+    refetch: refetchNotify,
+  } = useQuery({
+    queryKey: ["home-notification-unread", user?.companyId],
+    queryFn: async () => {
+      const res = await notificationService.getNotifications(1);
+      return res.data;
+    },
+    enabled: !!user?.companyId,
+    staleTime: 30_000,
+  });
+
+  const refetch = useCallback(async () => {
+    await Promise.all([refetchApproval(), refetchNotify()]);
+  }, [refetchApproval, refetchNotify]);
+
+  const numNotifyNew = notifyData?.numNotifyNew || 0;
+  const isLoading = isLoadingApproval || isLoadingNotify;
+
   const { modules, totalApproveCount } = useMemo(() => {
-    if (!approvalData || !Array.isArray(approvalData))
-      return { modules: [], totalApproveCount: 0 };
+    const dataList = Array.isArray(approvalData) ? approvalData : [];
 
-    const total = approvalData.reduce(
-      (acc: number, cur: ApprovalGroup) => acc + (cur.totalApprove || 0),
-      0,
-    );
+    const isAdmin = user?.isAdmin || false;
+    const permissions = user?.lstPermission || [];
 
-    const mods: Module[] = approvalData
-      .filter((item: ApprovalGroup) =>
-        ["PR", "PO", "SUPPLIER", "BID"].includes(item.type),
-      )
-      .map((item: ApprovalGroup) => {
-        const isGroup =
-          Array.isArray(item.children) && item.children.length > 0;
-
-        const uiMap: any = {
-          PR: {
-            icon: "shopping-cart",
-            bgColor: colors.lblueIcon,
-            iconColor: colors.blue,
-            subtitle: "Purchase Request",
-          },
-          PO: {
-            icon: "credit-card",
-            bgColor: colors.lgreenIcon,
-            iconColor: colors.green,
-            subtitle: "Purchase Order",
-          },
-          SUPPLIER: {
-            icon: "users",
-            bgColor: colors.lredIcon,
-            iconColor: colors.red,
-            subtitle: "Supplier",
-          },
-          BID: {
-            icon: "briefcase",
-            bgColor: colors.lredIcon,
-            iconColor: colors.red,
-            subtitle: "Bid Package",
-          },
-        };
-
-        const ui = uiMap[item.type] || {
-          icon: "grid",
-          bgColor: colors.lyellowIcon,
-          iconColor: colors.yellow,
-        };
-
-        return {
-          id: item.type,
-          title: item.typeName,
-          subtitle: ui.subtitle,
-          icon: ui.icon,
-          count: item.totalApprove,
-          bgColor: ui.bgColor,
-          iconColor: ui.iconColor,
-          isGroup,
-          forceExpand: ui.forceExpand,
-          items:
-            isGroup && item.children
-              ? item.children.map((c: ApprovalGroup) => ({
-                  title: c.typeName,
-                  type: c.type,
-                  icon: getIconForType(c.type),
-                  count: c.totalApprove,
-                }))
-              : [],
-        };
-      });
-
-    return {
-      modules: mods,
-      totalApproveCount: total,
+    const checkPermission = (code?: string) => {
+      if (!code || isAdmin) return true;
+      return permissions.some((p) => p.code === code && p.view);
     };
-  }, [approvalData, colors]);
 
-  return {
-    modules,
-    totalApproveCount,
-    isLoading,
-    refetch,
-  };
+    const mods: Module[] = [];
+    let total = 0;
+
+    for (const staticMod of STATICS_APPROVE_MODULES) {
+      if (!checkPermission(staticMod.permissionCode)) continue;
+
+      let modCount = 0;
+
+      if (staticMod.isGroup && staticMod.items) {
+        const childItems: ModuleItem[] = [];
+        for (const child of staticMod.items) {
+          if (!checkPermission(child.permissionCode)) continue;
+          const matchedData = dataList.find((d) => d.type === child.type);
+          const childCount = matchedData ? matchedData.totalApprove : 0;
+          modCount += childCount;
+          childItems.push({
+            ...child,
+            count: childCount,
+          });
+        }
+
+        if (childItems.length > 0) {
+          mods.push({
+            ...staticMod,
+            count: modCount,
+            items: childItems,
+          });
+          total += modCount;
+        }
+      } else {
+        const matchedData = dataList.find(
+          (d) => d.type === staticMod.id || d.type === staticMod.type,
+        );
+        const count = matchedData ? matchedData.totalApprove : 0;
+        mods.push({
+          ...staticMod,
+          count: count,
+        });
+        total += count;
+      }
+    }
+
+    return { modules: mods, totalApproveCount: total };
+  }, [approvalData, user]);
+
+  return { modules, totalApproveCount, numNotifyNew, isLoading, refetch };
 };

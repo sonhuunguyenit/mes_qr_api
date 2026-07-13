@@ -33,10 +33,10 @@ export interface PRMediaFile {
   dataType?: string;
 }
 
-export interface PRApprovalItem {
+export interface PRReleaseItem {
   id: string;
   level: number;
-  tile: string; // From API payload (likely intended as 'title')
+  title: string;
   employeeName: string;
   approved: boolean;
   reject: boolean;
@@ -46,9 +46,9 @@ export interface PRApprovalItem {
   employeePositionId?: string;
 }
 
-export interface PRApprovalLevel {
+export interface PRReleaseLevel {
   level: number;
-  lstApprove: PRApprovalItem[];
+  lstApprove: PRReleaseItem[];
 }
 
 export interface PRHistoryItem {
@@ -121,6 +121,15 @@ export interface PRDetailItem {
   fix_vendor?: string;
   trackingNumber?: string;
   sloc?: string;
+  coa?: string;
+  subNoAset?: number | string;
+  puorg?: string;
+  pugroup?: string;
+  pugrp?: string;
+  fmcontrol?: string;
+  sku?: string;
+  skuCode?: string;
+  companyCode?: string;
 }
 
 export interface PRItemData {
@@ -169,10 +178,12 @@ export interface PRItemData {
   requisitionerName?: string;
   prParentCode?: string;
   sumTotal?: number;
+  companyCode?: string;
+  subNoAset?: number | string;
   canApprove?: boolean;
   lstMediaFile?: PRMediaFile[];
   lstDetail?: PRDetailItem[];
-  lstApprovalProgress?: PRApprovalLevel[];
+  lstApprovalProgress?: PRReleaseLevel[];
   lstBudgetReceiptItem?: PRBudgetReceiptItem[];
   lstHistories?: PRHistoryItem[];
 }
@@ -189,7 +200,8 @@ export interface PRActionRequest {
 }
 
 export interface PRUpdateStatusRequest extends PRItemData {
-  lstItem?: PRDetailItem[];
+  lstDetail?: PRDetailItem[];
+  subNoAset?: number | string;
 }
 
 export interface PRFilterOptionsResponse {

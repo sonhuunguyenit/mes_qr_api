@@ -7,12 +7,17 @@ import { POActionRequest, POFilterParams, POItemData } from "./po.type";
 const ENDPOINTS = {
   PAGINATION: "/po/pagination",
   DETAIL: "/po/find_detail",
-  APPROVE: "/po/update_status_approved",
+  APPROVE: "/po/update_approved",
   UPDATE_WAIT_APPROVED: "/po/update_wait_approved",
   REJECT_RULE: "/po/update_reject_rule",
   REVERT_STATUS: "/po/update_revert_status",
   COMPANY_FIND: "/company/find",
   UOM_SELECT_BOX: "/uom/data_select_box",
+  // Sync from Web Admin api.service.ts
+  PO_LIST_ITEM_CHECK_BUDGET: "/po/find_list_item_po",
+  BUDGET_INFO: "/pr/check_budget_pr",
+  UPDATE_STATUS_RECHECK: "/po/update_data_recheck",
+  UPDATE_STATUS_CHECK_AGAIN: "/po/update_status_check_again",
 };
 
 export const poService = {
@@ -92,6 +97,41 @@ export const poService = {
 
   rejectPO: async (data: POActionRequest): Promise<AxiosResponse<any>> => {
     const response = await apiClient.post(ENDPOINTS.REJECT_RULE, data);
+    return response;
+  },
+
+  updateWaitApproved: async (
+    data: POActionRequest,
+  ): Promise<AxiosResponse<any>> => {
+    const response = await apiClient.post(ENDPOINTS.UPDATE_WAIT_APPROVED, data);
+    return response;
+  },
+
+  updateRevertStatus: async (
+    data: POActionRequest,
+  ): Promise<AxiosResponse<any>> => {
+    const response = await apiClient.post(ENDPOINTS.REVERT_STATUS, data);
+    return response;
+  },
+
+  // Sync from Web Admin
+  getPOListItemCheckBudget: async (data: any): Promise<AxiosResponse<any>> => {
+    const response = await apiClient.post(ENDPOINTS.PO_LIST_ITEM_CHECK_BUDGET, data);
+    return response;
+  },
+
+  getBudgetInfo: async (params: any): Promise<AxiosResponse<any>> => {
+    const response = await apiClient.post(ENDPOINTS.BUDGET_INFO, params);
+    return response;
+  },
+
+  updateStatusRecheck: async (data: any): Promise<AxiosResponse<any>> => {
+    const response = await apiClient.post(ENDPOINTS.UPDATE_STATUS_RECHECK, data);
+    return response;
+  },
+
+  updateStatusCheckAgain: async (data: any): Promise<AxiosResponse<any>> => {
+    const response = await apiClient.post(ENDPOINTS.UPDATE_STATUS_CHECK_AGAIN, data);
     return response;
   },
 };

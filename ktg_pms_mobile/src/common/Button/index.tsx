@@ -2,7 +2,6 @@ import { Button as ButtonRE, ButtonProps as ButtonREProps } from "@rneui/base";
 import React from "react";
 import { StyleSheet } from "react-native";
 import { useTheme } from "~/hooks/useTheme";
-
 import { sizes } from "~/constants/sizes";
 
 export interface ButtonProps extends ButtonREProps {
@@ -17,8 +16,8 @@ export const Button = ({ full, containerStyle, ...props }: ButtonProps) => {
       {...props}
       titleStyle={[
         {
-          color: colors.textOnPrimary,
           fontSize: sizes.fontSize.base,
+          color: colors.black,
         },
         props.titleStyle,
       ]}

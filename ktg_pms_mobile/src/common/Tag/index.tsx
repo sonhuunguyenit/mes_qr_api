@@ -1,7 +1,8 @@
 import { Icon } from "@rneui/base";
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import { Spacer, Text } from "~/common";
+import { Spacer } from "../Spacer";
+import { Text } from "../Text";
 import { useTheme } from "~/hooks/useTheme";
 
 interface TagProps {
@@ -38,7 +39,7 @@ export const Tag = ({
         style={{ flexDirection: "row", alignItems: "center", flexShrink: 1 }}
       >
         <Text bold color={colors.label} numberOfLines={1}>
-          {label}:{" "}
+          {label ? `${label}: ` : ""}
         </Text>
         <Text
           bold

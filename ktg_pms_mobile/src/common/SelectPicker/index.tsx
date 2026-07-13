@@ -106,7 +106,7 @@ const DropSelectPicker = ({
                 <Icon
                   name="close-circle-outline"
                   type="ionicon"
-                  size={18}
+                  size={20}
                   color={colors.placeholder}
                 />
               </TouchableOpacity>
@@ -152,9 +152,7 @@ const DropSelectPicker = ({
             }}
           >
             <Text
-              color={
-                tempValue === item[valueKey] ? colors.primary : colors.text
-              }
+              color={tempValue === item[valueKey] ? colors.active : colors.text}
               style={{ flex: 1, marginRight: spacing.sm }}
             >
               {item.label}
@@ -164,7 +162,7 @@ const DropSelectPicker = ({
                 name="check"
                 type="feather"
                 size={20}
-                color={colors.primary}
+                color={colors.active}
               />
             )}
           </TouchableOpacity>
@@ -270,7 +268,7 @@ export const SelectPicker = memo(
             weight="500"
             color={colors.label}
             style={{
-              marginBottom: 8,
+              marginBottom: 5,
             }}
           >
             {label}
@@ -311,7 +309,7 @@ export const SelectPicker = memo(
                 <Icon
                   type="ionicon"
                   name="close-circle-outline"
-                  size={18}
+                  size={20}
                   color={colors.placeholder}
                 />
               </TouchableOpacity>

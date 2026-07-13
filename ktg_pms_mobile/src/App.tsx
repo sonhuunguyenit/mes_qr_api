@@ -61,10 +61,10 @@ const App = () => {
       <SafeAreaProvider>
         <ThemeProvider>
           <QueryClientProvider client={queryClient}>
-            <ModalProvider>
-              <BottomSheetModalProvider>
-                <SheetProvider>
-                  <AuthProvider>
+            <AuthProvider>
+              <ModalProvider>
+                <BottomSheetModalProvider>
+                  <SheetProvider>
                     <StatusBar
                       barStyle="dark-content"
                       backgroundColor="transparent"
@@ -72,10 +72,10 @@ const App = () => {
                     />
                     <RootNavigator />
                     <FlashMessage position="top" floating={true} />
-                  </AuthProvider>
-                </SheetProvider>
-              </BottomSheetModalProvider>
-            </ModalProvider>
+                  </SheetProvider>
+                </BottomSheetModalProvider>
+              </ModalProvider>
+            </AuthProvider>
           </QueryClientProvider>
         </ThemeProvider>
       </SafeAreaProvider>

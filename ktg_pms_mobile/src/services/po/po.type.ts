@@ -63,10 +63,75 @@ export interface POContact {
   phoneNumber?: string;
 }
 
+export interface POItemPo {
+  id: string;
+  itemClosed?: string;
+  itemDeleted?: string;
+  itemNo?: string;
+  itemLine?: string;
+  acccate?: string;
+  acccateName?: string;
+  category?: string;
+  itemCategory?: string;
+  code?: string;
+  materialCode?: string;
+  materialGroupName?: string;
+  externalMaterialGroupName?: string;
+  externalMatGr?: string;
+  assetCode?: string;
+  serviceCode?: string;
+  orderCode?: string;
+  shortText?: string;
+  materialName?: string;
+  quantityUptoPO?: number;
+  warehouseQuantity?: number;
+  uomCode?: string;
+  ounName?: string;
+  expectedDeliveryDate?: string;
+  deliveryDate?: string;
+  price?: number; // RFQ Price
+  grossPrice?: number;
+  rfqPrice?: number;
+  pricePo?: number; // PO Price
+  netPrice?: number;
+  currencyName?: string;
+  rfqCurrency?: string;
+  per?: number;
+  rfqPer?: number;
+  currencyPoId?: string;
+  currencyPoName?: string;
+  perPo?: number;
+  opuName?: string;
+  opuId?: string;
+  fundCenter?: string;
+  fc?: string;
+  fp?: string;
+  ci?: string;
+  ciname?: string;
+  budgetPeriod?: string;
+  budgetperiod?: string;
+  valueItem?: number;
+  totalBudget?: number;
+  lowerTolerance?: number;
+  upperTolerance?: number;
+  materialStorageLocationName?: string;
+  storageLocation?: string;
+  storeLocationCode?: string;
+  validationType?: string;
+  valType?: string;
+  rfqCode?: string;
+  rfqItem?: string;
+  prCode?: string;
+  prItemCode?: string;
+}
+
 export interface PODetailData extends POItemData {
   // Reference section - API fields
   referenceSourceName?: string; // e.g. "(0)2A00.2202.2603.015-TEMPLATE..."
   referenceDocumentId?: string;
+  referenceDocumentCode?: string;
+  referenceDocumentTitle?: string;
+  referenceDocumentName?: string;
   referenceDocuments?: Array<{
     id: string;
     title: string;
@@ -106,7 +171,10 @@ export interface PODetailData extends POItemData {
   // Collections - use actual API array names
   lstPartner?: POPartner[]; // was poPartners
   lstMenber?: POContact[]; // was poContacts (note: API typo 'Menber' not 'Member')
-  lstItemPo?: any[]; // added for PO details table usage
+  lstItemPo?: POItemPo[]; // updated to strict type
+
+  totalPoGrossPrice?: number; // Trị giá PO (Gross)
+  canApprove?: boolean; // Permission to approve in current state
 
   // Notes & Details
   headerText?: string;

@@ -1,4 +1,5 @@
 import { Icon } from "@rneui/base";
+import { LinearGradient } from "expo-linear-gradient";
 import React, {
   useCallback,
   useEffect,
@@ -8,23 +9,24 @@ import React, {
 } from "react";
 import {
   LayoutChangeEvent,
-  NativeScrollEvent,
-  ScrollView,
   StyleSheet,
   TextStyle,
   TouchableOpacity,
   View,
   ViewStyle,
 } from "react-native";
-import { Text } from "../Text";
 import Animated, {
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withTiming,
+  Easing,
 } from "react-native-reanimated";
-import { colors } from "~/constants/colors";
+
 import { sizes } from "~/constants/sizes";
+import { useTheme } from "~/hooks/useTheme";
+import { Text } from "../Text";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -76,6 +78,7 @@ interface TableCustomProps {
   columnTextAlignments?: AlignSide[];
   stickyColumn?: "left" | "right";
   onRowPress?: (rowIndex: number) => void;
+  onRowDoublePress?: (rowIndex: number) => void;
   /** Không truyền → không hiện pagination (backward-compatible) */
   pagination?: PaginationConfig;
 }
@@ -83,8 +86,15 @@ interface TableCustomProps {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const HEADER_ROW_INDEX = -1;
-const DEFAULT_ROW_HEIGHT = 60;
+const DEFAULT_ROW_HEIGHT = 55;
 const MAX_VISIBLE_PAGES = 5;
+
+const DEFAULT_PAGINATION: PaginationConfig = {
+  enabled: true,
+  defaultPageSize: 5,
+  pageSizeOptions: [],
+  showTotal: false,
+};
 
 const AlignItem: Record<AlignSide, ViewStyle> = {
   left: { alignItems: "flex-start" },
@@ -199,6 +209,226 @@ const usePagination = (
   };
 };
 
+// ─── Style Hooks (memoized per theme change, not per render) ─────────────────
+
+const useTableStyles = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        tableContainer: {
+          borderRadius: 10,
+          borderWidth: 1,
+          overflow: "hidden",
+        },
+        layout: { flexDirection: "row" },
+        fixedSection: { zIndex: 2 },
+        stickyLeftShadowGradient: {
+          position: "absolute",
+          right: -4,
+          top: 0,
+          bottom: 0,
+          width: 4,
+        },
+        stickyRightShadowGradient: {
+          position: "absolute",
+          left: -4,
+          top: 0,
+          bottom: 0,
+          width: 4,
+        },
+        rowContainer: { borderBottomWidth: 0.8 },
+        headerRowContainer: {},
+        activeRowContainer: {
+          backgroundColor: colors.gray200 as string,
+          marginHorizontal: 4,
+          borderRadius: 8,
+          marginVertical: 2,
+        },
+        defaultRow: { flexDirection: "row" },
+        defaultHeaderStyle: {
+          minHeight: DEFAULT_ROW_HEIGHT,
+          paddingVertical: 10,
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        defaultContentStyle: {
+          minHeight: DEFAULT_ROW_HEIGHT,
+          paddingVertical: 10,
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        defaultHeaderText: {
+          fontSize: 13,
+          fontWeight: "600",
+          color: colors.title as string,
+        },
+        defaultContentText: {
+          fontSize: sizes.fontSize.base,
+          fontWeight: "400",
+          color: colors.text as string,
+        },
+        noDataContainer: {
+          height: 100,
+          justifyContent: "center",
+          alignItems: "center",
+          borderRadius: 8,
+          marginVertical: 4,
+        },
+        noDataText: {
+          fontSize: sizes.fontSize.base,
+          fontWeight: "500",
+          color: colors.label as string,
+        },
+        hintText: {
+          fontSize: 11,
+          fontWeight: "400",
+          color: colors.neutral700Alt as string,
+          alignSelf: "flex-end",
+          marginVertical: 8,
+          marginRight: 10,
+        },
+        filterButton: {
+          padding: 6,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: colors.gray200 as string,
+          borderRadius: 5,
+        },
+        filterDot: {
+          position: "absolute",
+          top: 6,
+          right: 6,
+          width: 6,
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: colors.accentRed as string,
+        },
+        eyeButton: {
+          height: 50,
+          width: 50,
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        scrollTrack: {
+          height: 8,
+          backgroundColor: colors.gray100 as string,
+          borderRadius: 4,
+          marginHorizontal: 8,
+          marginTop: 5,
+          marginBottom: 4,
+          overflow: "hidden",
+        },
+        scrollThumb: {
+          height: "100%",
+          backgroundColor: colors.gray400 as string,
+          borderRadius: 4,
+        },
+      }),
+    [colors],
+  );
+  return { styles, colors };
+};
+
+const usePaginationStyles = () => {
+  const { colors } = useTheme();
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          paddingHorizontal: 12,
+          gap: 8,
+          borderTopWidth: 1,
+          borderColor: colors.border as string,
+        },
+        topRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        },
+        bottomRow: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 4,
+        },
+        totalText: {
+          fontSize: sizes.fontSize.base,
+          fontWeight: "500",
+          color: colors.text as string,
+        },
+        totalTextMuted: {
+          fontSize: sizes.fontSize.base,
+          fontWeight: "400",
+          color: colors.label as string,
+        },
+        pageSizeRow: { flexDirection: "row", gap: 4 },
+        pageSizeBtn: {
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          borderRadius: 6,
+          borderWidth: 1,
+          borderColor: colors.border as string,
+        },
+        pageSizeBtnActive: {
+          borderColor: (colors.primary ?? colors.brandBlue) as string,
+          backgroundColor: (colors.primary ?? colors.brandBlue) as string,
+        },
+        pageSizeBtnText: {
+          fontSize: sizes.fontSize.sm,
+          fontWeight: "500",
+          color: colors.label as string,
+        },
+        pageSizeBtnTextActive: { color: colors.white as string },
+        navBtn: {
+          width: 35,
+          height: 35,
+          borderRadius: 35,
+          borderWidth: 1,
+          borderColor: colors.border as string,
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        navBtnDisabled: { opacity: 0.4 },
+        pageNumbersRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+        pageBtn: {
+          minWidth: 35,
+          height: 35,
+          paddingHorizontal: 6,
+          borderRadius: 35,
+          borderWidth: 1,
+          borderColor: colors.border as string,
+          justifyContent: "center",
+          alignItems: "center",
+        },
+        pageBtnActive: {
+          borderColor: colors.brandBlue as string,
+          backgroundColor: colors.brandBlue as string,
+        },
+        pageBtnText: {
+          fontSize: sizes.fontSize.base,
+          fontWeight: "500",
+          color: colors.text as string,
+        },
+        pageBtnTextActive: { color: colors.white as string },
+        ellipsis: {
+          width: 28,
+          height: 32,
+          justifyContent: "flex-end",
+          alignItems: "center",
+          paddingBottom: 4,
+        },
+        ellipsisText: {
+          fontSize: sizes.fontSize.base,
+          color: colors.label as string,
+          letterSpacing: 1,
+        },
+      }),
+    [colors],
+  );
+  return { styles, colors };
+};
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION 2 — TablePagination (UI)
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -237,30 +467,32 @@ const PageSizeSelector = React.memo(
     pageSize: number;
     pageSizeOptions: number[];
     setPageSize: (size: number) => void;
-  }) => (
-    <View style={paginationStyles.pageSizeRow}>
-      {pageSizeOptions.map((size) => (
-        <TouchableOpacity
-          key={size}
-          style={[
-            paginationStyles.pageSizeBtn,
-            pageSize === size && paginationStyles.pageSizeBtnActive,
-          ]}
-          onPress={() => setPageSize(size)}
-          activeOpacity={0.7}
-        >
-          <Text
+  }) => {
+    const { styles: paginationStyles } = usePaginationStyles();
+    return (
+      <View style={paginationStyles.pageSizeRow}>
+        {pageSizeOptions.map((size) => (
+          <TouchableOpacity
+            key={size}
             style={[
-              paginationStyles.pageSizeBtnText,
-              pageSize === size && paginationStyles.pageSizeBtnTextActive,
+              paginationStyles.pageSizeBtn,
+              pageSize === size && paginationStyles.pageSizeBtnActive,
             ]}
+            onPress={() => setPageSize(size)}
           >
-            {size}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  ),
+            <Text
+              style={[
+                paginationStyles.pageSizeBtnText,
+                pageSize === size && paginationStyles.pageSizeBtnTextActive,
+              ]}
+            >
+              {size}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
+  },
 );
 
 const PageButton = React.memo(
@@ -272,25 +504,33 @@ const PageButton = React.memo(
     page: number;
     isActive: boolean;
     onPress: (page: number) => void;
-  }) => (
-    <TouchableOpacity
-      style={[
-        paginationStyles.pageBtn,
-        isActive && paginationStyles.pageBtnActive,
-      ]}
-      onPress={() => onPress(page)}
-      activeOpacity={0.7}
-    >
-      <Text
+  }) => {
+    const { styles: paginationStyles, colors } = usePaginationStyles();
+    return (
+      <TouchableOpacity
         style={[
-          paginationStyles.pageBtnText,
-          isActive && paginationStyles.pageBtnTextActive,
+          paginationStyles.pageBtn,
+          isActive && [
+            paginationStyles.pageBtnActive,
+            {
+              backgroundColor: colors.brandBlue,
+              borderColor: colors.brandBlue,
+            },
+          ],
         ]}
+        onPress={() => onPress(page)}
       >
-        {page}
-      </Text>
-    </TouchableOpacity>
-  ),
+        <Text
+          style={[
+            paginationStyles.pageBtnText,
+            isActive && paginationStyles.pageBtnTextActive,
+          ]}
+        >
+          {page}
+        </Text>
+      </TouchableOpacity>
+    );
+  },
 );
 
 interface TablePaginationProps extends PaginationState, PaginationActions {
@@ -316,6 +556,7 @@ const TablePagination = ({
   showTotal = true,
   containerStyle,
 }: TablePaginationProps) => {
+  const { styles: paginationStyles, colors } = usePaginationStyles();
   const pageWindows = useMemo(
     () => buildPageWindows(currentPage, totalPages),
     [currentPage, totalPages],
@@ -329,7 +570,13 @@ const TablePagination = ({
   if (totalItems === 0) return null;
 
   return (
-    <View style={[paginationStyles.container, containerStyle]}>
+    <View
+      style={[
+        paginationStyles.container,
+        { backgroundColor: colors.card, borderColor: colors.border },
+        containerStyle,
+      ]}
+    >
       {/* Dòng trên: Tổng dòng + PageSize selector */}
       <View style={paginationStyles.topRow}>
         {showTotal && (
@@ -353,11 +600,11 @@ const TablePagination = ({
           <TouchableOpacity
             style={[
               paginationStyles.navBtn,
+              { borderColor: colors.border },
               isFirstPage && paginationStyles.navBtnDisabled,
             ]}
             onPress={prevPage}
             disabled={isFirstPage}
-            activeOpacity={0.7}
           >
             <Icon
               name="chevron-left"
@@ -387,11 +634,11 @@ const TablePagination = ({
           <TouchableOpacity
             style={[
               paginationStyles.navBtn,
+              { borderColor: colors.border },
               isLastPage && paginationStyles.navBtnDisabled,
             ]}
             onPress={nextPage}
             disabled={isLastPage}
-            activeOpacity={0.7}
           >
             <Icon
               name="chevron-right"
@@ -445,12 +692,19 @@ export const ButtonFilterTable = ({
 }: {
   onPress: () => void;
   isFiltered?: boolean;
-}) => (
-  <TouchableOpacity style={tableStyles.filterButton} onPress={onPress}>
-    <Icon name="sliders" size={20} type="feather" color={colors.text} />
-    {isFiltered && <View style={tableStyles.filterDot} />}
-  </TouchableOpacity>
-);
+}) => {
+  const { styles: tableStyles, colors } = useTableStyles();
+  return (
+    <TouchableOpacity style={tableStyles.filterButton} onPress={onPress}>
+      <Icon name="sliders" size={20} type="feather" color={colors.text} />
+      {isFiltered && (
+        <View
+          style={[tableStyles.filterDot, { backgroundColor: colors.accentRed }]}
+        />
+      )}
+    </TouchableOpacity>
+  );
+};
 
 export const EyeDetailRow = ({
   iconName = "eye",
@@ -458,11 +712,14 @@ export const EyeDetailRow = ({
 }: {
   iconName?: string;
   onPress: () => void;
-}) => (
-  <TouchableOpacity style={tableStyles.eyeButton} onPress={onPress}>
-    <Icon name={iconName} size={20} type="feather" color={colors.text} />
-  </TouchableOpacity>
-);
+}) => {
+  const { styles: tableStyles, colors } = useTableStyles();
+  return (
+    <TouchableOpacity style={tableStyles.eyeButton} onPress={onPress}>
+      <Icon name={iconName} size={20} type="feather" color={colors.text} />
+    </TouchableOpacity>
+  );
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SECTION 5 — Row components
@@ -474,7 +731,10 @@ interface RowTableItemProps {
   children: React.ReactNode;
   rowStyle?: ViewStyle;
   onRowPress?: (rowIndex: number) => void;
+  onRowDoublePress?: (rowIndex: number) => void;
   onLayout: (rowType: RowType, rowIndex: number, height: number) => void;
+  isLeftMost?: boolean;
+  isRightMost?: boolean;
 }
 
 /** Tạo animation chỉ khi row thực sự pressable → tránh useSharedValue dư thừa */
@@ -484,36 +744,94 @@ const PressableRow = React.memo(
     children,
     rowStyle,
     onRowPress,
+    onRowDoublePress,
     onLayout,
     isHeader,
+    isLeftMost,
+    isRightMost,
   }: Omit<RowTableItemProps, "rowType" | "onLayout"> & {
     isHeader: boolean;
     onLayout: (e: any) => void;
   }) => {
+    const { styles: tableStyles, colors } = useTableStyles();
     const scaleValue = useSharedValue(1);
+    const flashOpacity = useSharedValue(0);
+    const lastTap = useRef<number>(0);
+
     const animatedStyle = useAnimatedStyle(() => ({
       transform: [{ scale: withTiming(scaleValue.value, { duration: 150 }) }],
     }));
 
+    const flashStyle = useAnimatedStyle(() => ({
+      opacity: flashOpacity.value,
+    }));
+
+    const handlePress = useCallback(() => {
+      const now = Date.now();
+      const DOUBLE_PRESS_DELAY = 300;
+
+      if (
+        onRowDoublePress &&
+        lastTap.current &&
+        now - lastTap.current < DOUBLE_PRESS_DELAY
+      ) {
+        onRowDoublePress(rowIndex);
+        flashOpacity.value = withSequence(
+          withTiming(1, { duration: 50, easing: Easing.out(Easing.ease) }),
+          withTiming(0, { duration: 500, easing: Easing.in(Easing.ease) }),
+        );
+        lastTap.current = 0;
+      } else {
+        onRowPress?.(rowIndex);
+        lastTap.current = now;
+      }
+    }, [onRowDoublePress, onRowPress, rowIndex]);
     return (
       <Animated.View
         style={[
           tableStyles.rowContainer,
+          { borderBottomColor: colors.border },
           isHeader && tableStyles.headerRowContainer,
+          isHeader && { backgroundColor: colors.orangeHeader },
+          isHeader &&
+            isLeftMost && {
+              borderLeftWidth: 0.8,
+              borderTopLeftRadius: 10,
+              borderLeftColor: colors.border,
+            },
+          isHeader &&
+            isRightMost && {
+              borderRightWidth: 0.8,
+              borderTopRightRadius: 10,
+              borderRightColor: colors.border,
+            },
+          isHeader && (isLeftMost || isRightMost) && { overflow: "hidden" },
           animatedStyle,
         ]}
       >
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFillObject,
+            tableStyles.activeRowContainer,
+            flashStyle,
+          ]}
+          pointerEvents="none"
+        />
         <TouchableOpacity
-          onPress={() => onRowPress!(rowIndex)}
+          onPress={handlePress}
           onPressIn={() => {
             scaleValue.value = 0.98;
           }}
           onPressOut={() => {
             scaleValue.value = 1;
           }}
-          style={[tableStyles.defaultRow, rowStyle]}
+          style={[
+            tableStyles.defaultRow,
+            isHeader && { backgroundColor: "transparent" },
+            { backgroundColor: isHeader ? "transparent" : colors.card },
+            rowStyle,
+          ]}
           onLayout={onLayout}
-          activeOpacity={0.9}
         >
           {children}
         </TouchableOpacity>
@@ -528,23 +846,53 @@ const StaticRow = React.memo(
     rowStyle,
     onLayout,
     isHeader,
+    isLeftMost,
+    isRightMost,
   }: {
     children: React.ReactNode;
     rowStyle?: ViewStyle;
     isHeader: boolean;
+    isLeftMost?: boolean;
+    isRightMost?: boolean;
     onLayout: (e: any) => void;
-  }) => (
-    <View
-      style={[
-        tableStyles.rowContainer,
-        isHeader && tableStyles.headerRowContainer,
-      ]}
-    >
-      <View style={[tableStyles.defaultRow, rowStyle]} onLayout={onLayout}>
-        {children}
+  }) => {
+    const { styles: tableStyles, colors } = useTableStyles();
+    return (
+      <View
+        style={[
+          tableStyles.rowContainer,
+          { borderBottomColor: colors.border },
+          isHeader && tableStyles.headerRowContainer,
+          isHeader && { backgroundColor: colors.orangeHeader },
+          isHeader &&
+            isLeftMost && {
+              borderLeftWidth: 0.8,
+              borderTopLeftRadius: 10,
+              borderLeftColor: colors.border,
+            },
+          isHeader &&
+            isRightMost && {
+              borderRightWidth: 0.8,
+              borderTopRightRadius: 10,
+              borderRightColor: colors.border,
+            },
+          isHeader && (isLeftMost || isRightMost) && { overflow: "hidden" },
+        ]}
+      >
+        <View
+          style={[
+            tableStyles.defaultRow,
+            isHeader && { backgroundColor: "transparent" },
+            { backgroundColor: isHeader ? "transparent" : colors.card },
+            rowStyle,
+          ]}
+          onLayout={onLayout}
+        >
+          {children}
+        </View>
       </View>
-    </View>
-  ),
+    );
+  },
 );
 
 const RowTableItem = React.memo(
@@ -554,23 +902,28 @@ const RowTableItem = React.memo(
     children,
     rowStyle,
     onRowPress,
+    onRowDoublePress,
     onLayout,
+    isLeftMost,
+    isRightMost,
   }: RowTableItemProps) => {
     const isHeader = rowType === "Header";
-
     const handleLayout = useCallback(
       (e: any) => onLayout(rowType, rowIndex, e.nativeEvent.layout.height),
       [rowType, rowIndex, onLayout],
     );
 
-    if (onRowPress) {
+    if (onRowPress || onRowDoublePress) {
       return (
         <PressableRow
           rowIndex={rowIndex}
           rowStyle={rowStyle}
           onRowPress={onRowPress}
+          onRowDoublePress={onRowDoublePress}
           onLayout={handleLayout}
           isHeader={isHeader}
+          isLeftMost={isLeftMost}
+          isRightMost={isRightMost}
         >
           {children}
         </PressableRow>
@@ -582,6 +935,8 @@ const RowTableItem = React.memo(
         rowStyle={rowStyle}
         onLayout={handleLayout}
         isHeader={isHeader}
+        isLeftMost={isLeftMost}
+        isRightMost={isRightMost}
       >
         {children}
       </StaticRow>
@@ -602,6 +957,7 @@ interface CellItemProps {
   fixedHeight?: number;
   columnStyle: ViewStyle;
   textStyle: TextStyle;
+  isRendered: boolean;
 }
 
 const CellItem = React.memo(
@@ -612,10 +968,13 @@ const CellItem = React.memo(
     fixedHeight,
     columnStyle,
     textStyle,
+    isRendered,
   }: CellItemProps) => {
     const containerStyle: ViewStyle = {
       ...columnStyle,
-      ...(fixedHeight != null ? { height: fixedHeight } : {}),
+      ...(fixedHeight != null
+        ? { [isRendered ? "height" : "minHeight"]: fixedHeight }
+        : {}),
       ...customCellStyle,
     };
 
@@ -676,20 +1035,27 @@ const Table = ({
   columnTextAlignments,
   stickyColumn,
   onRowPress,
+  onRowDoublePress,
   pagination,
 }: TableCustomProps) => {
+  const { styles: tableStyles, colors } = useTableStyles();
+  const paginationConfig = useMemo(() => {
+    if (!pagination) return DEFAULT_PAGINATION;
+    return { ...DEFAULT_PAGINATION, ...pagination };
+  }, [pagination]);
+
   // ─── Pagination ─────────────────────────────────────────────────────────────
 
   const paginationState = usePagination(rows.length, {
-    defaultPageSize: pagination?.defaultPageSize ?? 5,
-    onPageChange: pagination?.onPageChange,
+    defaultPageSize: paginationConfig.defaultPageSize,
+    onPageChange: paginationConfig.onPageChange,
   });
 
   /**
    * Nếu pagination bật → slice rows theo trang.
    * Nếu không → dùng toàn bộ rows (backward-compatible).
    */
-  const visibleRows = pagination?.enabled
+  const visibleRows = paginationConfig.enabled
     ? rows.slice(paginationState.startIndex, paginationState.endIndex)
     : rows;
 
@@ -724,7 +1090,7 @@ const Table = ({
 
   const handleLayout = useCallback(
     (rowType: RowType, rowIndex: number, height: number) => {
-      if (isRendered.current) return;
+      if (isRendered.current || layoutWidth === 0) return;
 
       if (rowType === "Header") {
         if (height > layoutRef.current.headerHeight) {
@@ -818,7 +1184,12 @@ const Table = ({
         columnWidths,
       );
 
-      return { ...withAlign, width: Number.isFinite(width) ? width : 0 };
+      return {
+        ...withAlign,
+        width: Number.isFinite(width) ? width : 0,
+        borderRightWidth: 0.8,
+        borderRightColor: colors.border,
+      };
     },
     [
       layoutWidth,
@@ -842,7 +1213,7 @@ const Table = ({
         ? { ...base, ...AlignText[align] }
         : { ...base, textAlign: "center" };
     },
-    [headerTextStyle, cellTextStyle, columnTextAlignments],
+    [headerTextStyle, cellTextStyle, columnTextAlignments, tableStyles],
   );
 
   // ─── Render helpers ──────────────────────────────────────────────────────────
@@ -876,6 +1247,7 @@ const Table = ({
             fixedHeight={getFixedHeight(rowType, rowIndex)}
             columnStyle={buildColumnStyle(rowType, colIndex)}
             textStyle={buildTextStyle(rowType, colIndex)}
+            isRendered={isRendered.current}
           />
         );
       }),
@@ -923,7 +1295,15 @@ const Table = ({
   // ─── Header ──────────────────────────────────────────────────────────────────
 
   const HeaderTable = useCallback(
-    ({ isFixed }: { isFixed: boolean }) => {
+    ({
+      isFixed,
+      isLeftMost,
+      isRightMost,
+    }: {
+      isFixed: boolean;
+      isLeftMost?: boolean;
+      isRightMost?: boolean;
+    }) => {
       const { cells, startIndex } = getSlicedColumns(isFixed);
       return (
         <RowTableItem
@@ -932,6 +1312,8 @@ const Table = ({
           rowStyle={headerRowStyle}
           onRowPress={undefined}
           onLayout={handleLayout}
+          isLeftMost={isLeftMost}
+          isRightMost={isRightMost}
         >
           {renderCells("Header", 0, cells, startIndex)}
         </RowTableItem>
@@ -943,7 +1325,15 @@ const Table = ({
   // ─── Content ─────────────────────────────────────────────────────────────────
 
   const ContentTable = useCallback(
-    ({ isFixed }: { isFixed: boolean }) => (
+    ({
+      isFixed,
+      isLeftMost,
+      isRightMost,
+    }: {
+      isFixed: boolean;
+      isLeftMost?: boolean;
+      isRightMost?: boolean;
+    }) => (
       <View>
         {visibleRows.map((row, rowIndex) => {
           const { cells, startIndex } = getSlicedRowCells(row, isFixed);
@@ -954,7 +1344,10 @@ const Table = ({
               rowIndex={rowIndex}
               rowStyle={row?.rowStyle}
               onRowPress={onRowPress}
+              onRowDoublePress={onRowDoublePress}
               onLayout={handleLayout}
+              isLeftMost={isLeftMost}
+              isRightMost={isRightMost}
             >
               {renderCells(
                 "Content",
@@ -968,30 +1361,86 @@ const Table = ({
         })}
       </View>
     ),
-    [visibleRows, getSlicedRowCells, onRowPress, handleLayout, renderCells],
+    [
+      visibleRows,
+      getSlicedRowCells,
+      onRowPress,
+      onRowDoublePress,
+      handleLayout,
+      renderCells,
+    ],
   );
 
   // ─── Layout section ───────────────────────────────────────────────────────────
 
   const LayoutSection = useCallback(
-    ({ isFixed }: { isFixed: boolean }) => (
-      <View>
-        <HeaderTable isFixed={isFixed} />
-        {visibleRows.length > 0 && <ContentTable isFixed={isFixed} />}
+    ({
+      isFixed,
+      isLeftMost,
+      isRightMost,
+    }: {
+      isFixed: boolean;
+      isLeftMost?: boolean;
+      isRightMost?: boolean;
+    }) => (
+      <View
+        style={[
+          isFixed && tableStyles.fixedSection,
+          isFixed && { backgroundColor: colors.card },
+        ]}
+      >
+        <HeaderTable
+          isFixed={isFixed}
+          isLeftMost={isLeftMost}
+          isRightMost={isRightMost}
+        />
+        {visibleRows.length > 0 && (
+          <ContentTable
+            isFixed={isFixed}
+            isLeftMost={isLeftMost}
+            isRightMost={isRightMost}
+          />
+        )}
+
+        {isFixed && stickyColumn === "left" && (
+          <LinearGradient
+            colors={[colors.blackAlpha8 as string, "transparent"]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={tableStyles.stickyLeftShadowGradient}
+          />
+        )}
+        {isFixed && stickyColumn === "right" && (
+          <LinearGradient
+            colors={["transparent", colors.blackAlpha8 as string]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={tableStyles.stickyRightShadowGradient}
+          />
+        )}
       </View>
     ),
-    [HeaderTable, ContentTable, visibleRows.length],
+    [HeaderTable, ContentTable, visibleRows.length, stickyColumn],
   );
 
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <View
-      style={[tableStyles.tableContainer, containerStyle]}
+      style={[
+        tableStyles.tableContainer,
+        {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+        },
+        containerStyle,
+      ]}
       onLayout={onContainerLayout}
     >
       <View style={tableStyles.layout}>
-        {stickyColumn === "left" && <LayoutSection isFixed key="sticky-left" />}
+        {stickyColumn === "left" && (
+          <LayoutSection isFixed isLeftMost key="sticky-left" />
+        )}
 
         <View style={{ flex: 1 }} onLayout={onScrollViewLayout}>
           <Animated.ScrollView
@@ -1001,7 +1450,12 @@ const Table = ({
             onScroll={scrollHandler}
             onContentSizeChange={onContentSizeChange}
           >
-            <LayoutSection isFixed={false} key="scrollable" />
+            <LayoutSection
+              isFixed={false}
+              isLeftMost={!stickyColumn || stickyColumn === "right"}
+              isRightMost={!stickyColumn || stickyColumn === "left"}
+              key="scrollable"
+            />
           </Animated.ScrollView>
 
           {horizontalScroll && rows.length > 0 && (
@@ -1012,7 +1466,7 @@ const Table = ({
         </View>
 
         {stickyColumn === "right" && (
-          <LayoutSection isFixed key="sticky-right" />
+          <LayoutSection isFixed isRightMost key="sticky-right" />
         )}
       </View>
 
@@ -1021,16 +1475,18 @@ const Table = ({
           <Text style={tableStyles.noDataText}>Không có dữ liệu</Text>
         </View>
       )}
-      {pagination?.enabled && rows.length > 0 && (
+
+      {paginationConfig.enabled && rows.length > 0 && (
         <TablePagination
           {...paginationState}
-          pageSizeOptions={pagination.pageSizeOptions}
-          showTotal={pagination.showTotal ?? true}
+          pageSizeOptions={paginationConfig.pageSizeOptions}
+          showTotal={paginationConfig.showTotal}
         />
       )}
-
       {horizontalScroll && rows.length > 0 && (
-        <Text style={tableStyles.hintText}>* Kéo sang trái để xem thêm</Text>
+        <Text style={[tableStyles.hintText, { color: colors.neutral700Alt }]}>
+          * Chạm 2 lần để xem chi tiết và vuốt sang trái để xem thêm
+        </Text>
       )}
     </View>
   );
@@ -1040,215 +1496,7 @@ const Table = ({
 // SECTION 8 — Styles
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const tableStyles = StyleSheet.create({
-  tableContainer: {
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    overflow: "hidden",
-  },
-  layout: {
-    flexDirection: "row",
-  },
-  rowContainer: {
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-  },
-  headerRowContainer: {
-    backgroundColor: colors.lgrayBg,
-  },
-  defaultRow: {
-    flexDirection: "row",
-    backgroundColor: colors.white,
-  },
-  defaultHeaderStyle: {
-    height: DEFAULT_ROW_HEIGHT,
-    paddingVertical: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  defaultContentStyle: {
-    height: DEFAULT_ROW_HEIGHT,
-    paddingVertical: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  defaultHeaderText: {
-    fontSize: sizes.fontSize.base,
-    fontWeight: "600",
-    color: colors.label,
-  },
-  defaultContentText: {
-    fontSize: sizes.fontSize.base,
-    fontWeight: "400",
-    color: colors.text,
-  },
-  noDataContainer: {
-    height: 100,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.white,
-    borderRadius: 8,
-    marginVertical: 4,
-  },
-  noDataText: {
-    fontSize: sizes.fontSize.base,
-    fontWeight: "500",
-    color: colors.label,
-  },
-  hintText: {
-    fontSize: sizes.fontSize.xs, // 10px or keep small
-    fontWeight: "400",
-    color: "#64748B",
-    alignSelf: "flex-end",
-    marginVertical: 8,
-    marginRight: 10,
-  },
-  filterButton: {
-    padding: 6,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: colors.gray200,
-    borderRadius: 5,
-  },
-  filterDot: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#F80D53",
-  },
-  eyeButton: {
-    height: 60,
-    width: 60,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scrollTrack: {
-    height: 6,
-    backgroundColor: colors.gray100,
-    borderRadius: 3,
-    marginHorizontal: 8,
-    marginBottom: 4,
-    overflow: "hidden",
-  },
-  scrollThumb: {
-    height: "100%",
-    backgroundColor: colors.gray400,
-    borderRadius: 3,
-  },
-});
-
-const paginationStyles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 12,
-    gap: 8,
-    borderTopWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-  },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  bottomRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-  },
-  totalText: {
-    fontSize: sizes.fontSize.base,
-    fontWeight: "500",
-    color: colors.text,
-  },
-  totalTextMuted: {
-    fontSize: sizes.fontSize.base,
-    fontWeight: "400",
-    color: colors.label,
-  },
-  pageSizeRow: {
-    flexDirection: "row",
-    gap: 4,
-  },
-  pageSizeBtn: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-  },
-  pageSizeBtnActive: {
-    borderColor: colors.primary ?? "#3B82F6",
-    backgroundColor: colors.primary ?? "#3B82F6",
-  },
-  pageSizeBtnText: {
-    fontSize: sizes.fontSize.sm, // sm is now 13
-    fontWeight: "500",
-    color: colors.label,
-  },
-  pageSizeBtnTextActive: {
-    color: colors.white,
-  },
-  navBtn: {
-    width: 35,
-    height: 35,
-    borderRadius: 35,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  navBtnDisabled: {
-    opacity: 0.4,
-  },
-  pageNumbersRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  pageBtn: {
-    minWidth: 35,
-    height: 35,
-    paddingHorizontal: 6,
-    borderRadius: 35,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  pageBtnActive: {
-    borderColor: colors.primary ?? "#3B82F6",
-    backgroundColor: colors.primary ?? "#3B82F6",
-  },
-  pageBtnText: {
-    fontSize: sizes.fontSize.base,
-    fontWeight: "500",
-    color: colors.text,
-  },
-  pageBtnTextActive: {
-    color: colors.white,
-  },
-  ellipsis: {
-    width: 28,
-    height: 32,
-    justifyContent: "flex-end",
-    alignItems: "center",
-    paddingBottom: 4,
-  },
-  ellipsisText: {
-    fontSize: sizes.fontSize.base,
-    color: colors.label,
-    letterSpacing: 1,
-  },
-});
+// tableStyles and paginationStyles are now provided via useTableStyles() and usePaginationStyles() hooks above.
 
 // ─── Static Methods ───────────────────────────────────────────────────────────
 

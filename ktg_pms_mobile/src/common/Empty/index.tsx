@@ -1,7 +1,7 @@
 import { Text } from "../Text";
 import { Icon } from "@rneui/base";
 import React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleProp, StyleSheet, View, ViewStyle } from "react-native";
 import { useTheme } from "~/hooks/useTheme";
 
 type EmptyProps = {
@@ -9,6 +9,7 @@ type EmptyProps = {
   description?: string;
   iconName?: string;
   iconType?: string;
+  style?: StyleProp<ViewStyle>;
 };
 
 const Empty = ({
@@ -16,11 +17,12 @@ const Empty = ({
   description = "Hiện chưa có yêu cầu phê duyệt nào.",
   iconName = "inbox",
   iconType = "feather",
+  style = {},
 }: EmptyProps) => {
   const { colors } = useTheme();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, style]}>
       <View
         style={[
           styles.iconWrap,

@@ -3,9 +3,9 @@ import {
   CheckBoxProps as CheckBoxREProps,
 } from "@rneui/base";
 import React from "react";
-import { StyleSheet, TextStyle, View, ViewStyle } from "react-native";
-import { useTheme } from "~/hooks/useTheme";
+import { ColorValue, StyleSheet, View } from "react-native";
 import { sizes } from "~/constants/sizes";
+import { useTheme } from "~/hooks/useTheme";
 import { Text } from "../Text";
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ export interface CheckboxProps extends Omit<CheckBoxREProps, "title"> {
   /** Màu khi checked – theo semantic hoặc custom string */
   color?: SemanticColor;
   /** Custom color override (ưu tiên hơn `color`) */
-  activeColor?: string;
+  activeColor?: ColorValue;
   /** Kích thước icon: sm(18) | md(22) | lg(26). Default "md" */
   sizeVariant?: "sm" | "md" | "lg";
   /** Trái hay Phải label. Default "left" */
@@ -52,7 +52,7 @@ export const Checkbox = ({
   const { colors, fonts } = useTheme();
 
   // ── Resolve colors ──
-  const COLOR_MAP: Record<SemanticColor, string> = {
+  const COLOR_MAP: Record<SemanticColor, any> = {
     primary: colors.primary,
     success: colors.green,
     error: colors.red,
@@ -72,7 +72,9 @@ export const Checkbox = ({
               {
                 fontFamily: fonts.medium,
                 fontSize: sizes.fontSize.base,
-                color: props.disabled ? colors.disabled : colors.label,
+                color: props.disabled
+                  ? (colors.disabled as any)
+                  : (colors.label as any),
                 marginBottom: 2,
               },
               textStyle,
@@ -84,7 +86,7 @@ export const Checkbox = ({
         {description && (
           <Text
             size={sizes.fontSize.xs}
-            style={{ color: colors.label, marginTop: 2 }}
+            style={{ color: colors.label as any, marginTop: 2 }}
           >
             {description}
           </Text>
@@ -100,8 +102,12 @@ export const Checkbox = ({
         iconRight={align === "right"}
         title={renderTitle()}
         size={iconSize}
-        checkedColor={errorMessage ? colors.error : checkedColor}
-        uncheckedColor={errorMessage ? colors.error : colors.disabled}
+        checkedColor={(errorMessage ? colors.error : checkedColor) as any}
+        uncheckedColor={
+          (errorMessage
+            ? colors.error
+            : props.uncheckedColor || colors.disabled) as any
+        }
         containerStyle={[styles.container, containerStyle]}
         wrapperStyle={[styles.wrapper, wrapperStyle]}
         textStyle={[styles.text, textStyle]}
@@ -114,7 +120,7 @@ export const Checkbox = ({
         <Text
           size={sizes.fontSize.xs}
           style={{
-            color: colors.error,
+            color: colors.error as any,
             marginLeft: align === "left" ? 32 : 0,
             marginTop: 4,
           }}

@@ -44,6 +44,11 @@ export const goHome = () =>
     screen: ROUTE_KEYS.Home,
   });
 
+export const goHomeSearch = () =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.HomeSearch,
+  });
+
 export const goNotification = () =>
   navigate(ROUTE_KEYS.AppNavigator, {
     screen: ROUTE_KEYS.Notification,
@@ -108,9 +113,7 @@ export const getCurrentRoute = (): keyof RootNavigatorParamList | null => {
     : null;
 };
 
-export const goPR = (
-  params: { isApprove?: boolean; listTargetId?: string; type?: string } = {},
-) =>
+export const goPR = (params: { listTargetId?: string; type?: string } = {}) =>
   navigate(ROUTE_KEYS.AppNavigator, {
     screen: ROUTE_KEYS.PR,
     params,
@@ -122,9 +125,7 @@ export const goPRDetail = (item: any) =>
     params: { item },
   });
 
-export const goPO = (
-  params: { isApprove?: boolean; listTargetId?: string; type?: string } = {},
-) =>
+export const goPO = (params: { listTargetId?: string; type?: string } = {}) =>
   navigate(ROUTE_KEYS.AppNavigator, {
     screen: ROUTE_KEYS.PO,
     params,
@@ -135,6 +136,218 @@ export const goPODetail = (item: any) =>
     screen: ROUTE_KEYS.PODetail,
     params: { item },
   });
+
+export const goSupplierSap = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierSap,
+    params,
+  });
+
+export const goSupplierSapDetail = (item: any) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierSapDetail,
+    params: { item },
+  });
+
+export const goSupplierPotential = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierPotential,
+    params,
+  });
+
+export const goSupplierPotentialDetail = (item: any) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierPotentialDetail,
+    params: { item },
+  });
+
+export const goSupplierLaw = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierLaw,
+    params,
+  });
+
+export const goSupplierLawDetail = (item: any) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierLawDetail,
+    params: { item },
+  });
+
+export const goContract = (
+  params: {
+    listTargetId?: string[];
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.Contract,
+    params,
+  });
+
+export const goContractDetail = (params: {
+  item: any;
+  onGoBack?: () => void;
+}) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.ContractDetail,
+    params,
+  });
+
+export const goSupplierCapacity = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierCapacity,
+    params,
+  });
+
+export const goSupplierCapacityDetail = (item: any) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierCapacityDetail,
+    params: { item },
+  });
+
+export const goSupplierLock = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierLock,
+    params,
+  });
+
+export const goSupplierLockDetail = (item: any) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierLockDetail,
+    params: { item },
+  });
+
+export const goSupplierLockService = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierLockService,
+    params,
+  });
+
+export const goSupplierLockServiceDetail = (item: any) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.SupplierLockServiceDetail,
+    params: { item },
+  });
+
+export const goBid = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.Bid,
+    params,
+  });
+
+export const goBidDetail = (
+  id: string,
+  isRate?: boolean,
+  isMemeberApproved?: boolean,
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.BidDetail,
+    params: { id, isRate, isMemeberApproved },
+  });
+
+export const goBidRate = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.BidRate,
+    params,
+  });
+
+export const goReservationDemand = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.ReservationDemand,
+    params,
+  });
+
+export const goReservationDemandDetail = (item: any) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.ReservationDemandDetail,
+    params: { item },
+  });
+
+export const goReservationMaintenance = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.ReservationMaintenance,
+    params,
+  });
+
+export const goReservationMaintenanceDetail = (item: any) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.ReservationMaintenanceDetail,
+    params: { item },
+  });
+
+export const goMaterialApproval = (
+  params: {
+    listTargetId?: string;
+    type?: string;
+  } = {},
+) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.MaterialApproval,
+    params,
+  });
+
+export const goMaterialApprovalDetail = (item: any) =>
+  navigate(ROUTE_KEYS.AppNavigator, {
+    screen: ROUTE_KEYS.MaterialApprovalDetail,
+    params: { item },
+  });
+
+export const goReservationDetail = (item: any, isMaintenance?: boolean) => {
+  if (isMaintenance === true) {
+    return goReservationMaintenanceDetail(item);
+  }
+  return goReservationDemandDetail(item);
+};
 
 export const goPreview = () =>
   navigate(ROUTE_KEYS.AppNavigator as any, {

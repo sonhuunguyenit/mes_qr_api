@@ -1,7 +1,6 @@
 import { Button, Column, Text } from "~/common";
 import { getFontStyle } from "~/common/Text";
 import { BOTTOM_SHEET_HEIGHT, MONTHS } from "~/constants";
-import { colors } from "~/constants/colors";
 import {
   BottomSheetBackdrop,
   BottomSheetModal,
@@ -11,6 +10,7 @@ import { Icon } from "@rneui/base";
 import React, { useCallback, forwardRef, useState } from "react";
 import { View, StyleSheet, TouchableOpacity, FlatList } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useTheme } from "~/hooks/useTheme";
 
 export interface MonthRangeResult {
   startDate: string;
@@ -25,6 +25,7 @@ interface Props {
 
 const MonthCalendar = forwardRef<BottomSheetModal, Props>((props, ref) => {
   const { onConfirm, initialDate = new Date() } = props;
+  const { colors } = useTheme();
 
   const insets = useSafeAreaInsets();
   const [viewYear, setViewYear] = useState(initialDate.getFullYear());
@@ -78,6 +79,8 @@ const MonthCalendar = forwardRef<BottomSheetModal, Props>((props, ref) => {
       snapPoints={[BOTTOM_SHEET_HEIGHT]}
       enablePanDownToClose
       backdropComponent={renderBackdrop}
+      backgroundStyle={{ backgroundColor: colors.surface }}
+      handleIndicatorStyle={{ backgroundColor: colors.divider }}
     >
       <BottomSheetView style={{ flex: 1, paddingHorizontal: 20 }}>
         <Text
@@ -93,16 +96,31 @@ const MonthCalendar = forwardRef<BottomSheetModal, Props>((props, ref) => {
         </Text>
 
         <Column full>
-          <View style={styles.container}>
+          <View
+            style={[
+              styles.container,
+              {
+                backgroundColor: colors.surface as string,
+                borderColor: colors.divider as string,
+              },
+            ]}
+          >
             <View style={styles.header}>
               <TouchableOpacity
                 onPress={() => changeYear(-1)}
                 style={styles.arrowBtn}
               >
-                <Icon name="chevron-left" type="material-community" size={27} />
+                <Icon
+                  name="chevron-left"
+                  type="material-community"
+                  size={27}
+                  color={colors.text as string}
+                />
               </TouchableOpacity>
               <View style={styles.title}>
-                <Text style={styles.yearTitle}>{viewYear}</Text>
+                <Text style={[styles.yearTitle, { color: colors.label as string }]}>
+                  {viewYear}
+                </Text>
               </View>
               <TouchableOpacity
                 onPress={() => changeYear(1)}
@@ -112,6 +130,7 @@ const MonthCalendar = forwardRef<BottomSheetModal, Props>((props, ref) => {
                   name="chevron-right"
                   type="material-community"
                   size={27}
+                  color={colors.text as string}
                 />
               </TouchableOpacity>
             </View>
@@ -130,14 +149,25 @@ const MonthCalendar = forwardRef<BottomSheetModal, Props>((props, ref) => {
                   <TouchableOpacity
                     style={[
                       styles.monthItem,
-                      isSelected && styles.selectedMonthItem,
+                      { backgroundColor: colors.neutral15 },
+                      isSelected && [
+                        styles.selectedMonthItem,
+                        {
+                          backgroundColor: colors.lgreenBg as string,
+                          borderColor: colors.primary as string,
+                        },
+                      ],
                     ]}
                     onPress={() => toggleMonth(index)}
                   >
                     <Text
                       style={[
                         styles.monthText,
-                        isSelected && styles.selectedMonthText,
+                        { color: colors.label as string },
+                        isSelected && [
+                          styles.selectedMonthText,
+                          { color: colors.primary as string },
+                        ],
                       ]}
                     >
                       {item}
@@ -155,7 +185,7 @@ const MonthCalendar = forwardRef<BottomSheetModal, Props>((props, ref) => {
             onPress={handleConfirm}
             containerStyle={{ borderRadius: 50 }}
             buttonStyle={{ height: 50, backgroundColor: colors.primary }}
-            titleStyle={{ color: "#fff", ...getFontStyle("700") }}
+            titleStyle={{ color: colors.white, ...getFontStyle("700") }}
             disabled={selectedMonths.length === 0}
           />
         </View>
@@ -168,12 +198,10 @@ MonthCalendar.displayName = "MonthCalendar";
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#ffffff",
     borderRadius: 16,
     padding: 16,
     width: "100%",
     borderWidth: 1,
-    borderColor: colors.border,
   },
   header: {
     flexDirection: "row",
@@ -190,7 +218,6 @@ const styles = StyleSheet.create({
   yearTitle: {
     fontSize: 20,
     ...getFontStyle("700"),
-    color: colors.label,
   },
   arrowBtn: {
     padding: 10,
@@ -205,20 +232,14 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     alignItems: "center",
     borderRadius: 10,
-    backgroundColor: "#F9F9F9",
     borderWidth: 1,
     borderColor: "transparent",
   },
-  selectedMonthItem: {
-    backgroundColor: "#f0fdf4",
-    borderColor: colors.primary,
-  },
+  selectedMonthItem: {},
   monthText: {
     fontSize: 14,
-    color: "#444",
   },
   selectedMonthText: {
-    color: colors.primary,
     ...getFontStyle("700"),
   },
 });

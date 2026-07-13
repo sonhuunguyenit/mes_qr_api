@@ -1,5 +1,4 @@
 import { CALENDAR_THEME } from "~/constants";
-import { colors } from "~/constants/colors";
 import React, { useState } from "react";
 import { Alert } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
@@ -20,6 +19,8 @@ type Props = {
   markerDates?: CalendarDateItem[];
 };
 
+import { useTheme } from "~/hooks/useTheme";
+
 const PickerCalendar = ({
   range = false,
   onSelectDate,
@@ -28,6 +29,7 @@ const PickerCalendar = ({
   disabledDates = [],
   markerDates = [],
 }: Props) => {
+  const { colors } = useTheme();
   const [selected, setSelected] = useState(initialDate || "");
   const [fromDate, setFromDate] = useState<string>(initialDate || "");
   const [toDate, setToDate] = useState<string | null>(null);
@@ -69,16 +71,16 @@ const PickerCalendar = ({
     markerDates.forEach((item) => {
       marks[item.date] = {
         selected: true,
-        selectedColor: item.color || "#E2E8F0",
-        selectedTextColor: item.textColor || "#475569",
+        selectedColor: item.color || colors.slate200,
+        selectedTextColor: item.textColor || colors.slate600,
       };
     });
 
     disabledDates.forEach((item) => {
       marks[item.date] = {
         selected: true,
-        selectedColor: item.color || "#F1F5F9",
-        selectedTextColor: item.textColor || "#475569",
+        selectedColor: item.color || colors.slate100,
+        selectedTextColor: item.textColor || colors.slate600,
       };
     });
 
@@ -86,7 +88,7 @@ const PickerCalendar = ({
       marks[selected] = {
         selected: true,
         selectedColor: colors.primary,
-        selectedTextColor: "#ffffff",
+        selectedTextColor: colors.white,
       };
     }
 
@@ -96,7 +98,7 @@ const PickerCalendar = ({
           ...marks[fromDate],
           startingDay: true,
           color: colors.primary,
-          textColor: "#ffffff",
+          textColor: colors.white,
         };
       }
       if (toDate) {
@@ -104,7 +106,7 @@ const PickerCalendar = ({
           ...marks[toDate],
           endingDay: true,
           color: colors.primary,
-          textColor: "#ffffff",
+          textColor: colors.white,
         };
         let start = new Date(fromDate);
         let end = new Date(toDate);
@@ -113,7 +115,7 @@ const PickerCalendar = ({
         while (curr < end) {
           const d = curr.toISOString().split("T")[0];
           if (!marks[d]) {
-            marks[d] = { color: colors.primary, textColor: "#ffffff" };
+            marks[d] = { color: colors.primary, textColor: colors.white as string };
           }
           curr.setDate(curr.getDate() + 1);
         }
@@ -131,9 +133,9 @@ const PickerCalendar = ({
       markedDates={getMarkedDates()}
       theme={{
         ...CALENDAR_THEME,
-        todayTextColor: colors.primary,
-        arrowColor: colors.primary,
-        textDisabledColor: "#D1D5DB",
+        todayTextColor: colors.primary as string,
+        arrowColor: colors.primary as string,
+        textDisabledColor: colors.neutral300 as string,
         textDayFontWeight: "400",
         textMonthFontWeight: "600",
         textDayHeaderFontWeight: "400",

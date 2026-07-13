@@ -1,5 +1,4 @@
 import { PADDING_HORIZONTAL } from "~/constants";
-import { colors } from "~/constants/colors";
 
 const globalStyle = {
   container: {
@@ -10,50 +9,46 @@ const globalStyle = {
     flex: 1,
     width: "100%",
   },
-  flat: {
+  scrollContent: {
+    marginTop: 5,
+    paddingHorizontal: 8,
+  },
+  scrollContainerDetail: {
+    paddingBottom: 50,
+  },
+  flatlist: {
     flex: 1,
     width: "100%",
   },
-  card: {
-    flex: 1,
-    width: "100%",
+  flatlistContent: {
+    marginTop: 5,
+    paddingHorizontal: 8,
+    paddingBottom: 20,
   },
-  collapse: {},
-  spacer: 20,
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+  emptyContainer: {
+    flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 11,
-    backgroundColor: "#fff",
+    alignItems: "center",
   },
-  legendBar: {
+  collapseContainer: {
+    paddingHorizontal: 5,
+    paddingBottom: 0,
+  },
+  item: {
+    marginBottom: 8,
+  },
+  tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingTop: 16,
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#F1F5F9",
-    paddingHorizontal: 10,
-    gap: 10,
+    gap: 5,
   },
-  legendItem: {
-    width: "33.33%",
-    marginBottom: 10,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  rowInfo: {
-    height: 60,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderColor: "#F1F5F9",
-    gap: 10,
+  loadingIndicator: {
+    transform: [{ scale: 0.85 }],
   },
 } as const;
 

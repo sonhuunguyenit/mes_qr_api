@@ -13,6 +13,84 @@ export enum PO_STATUS {
   REJECT = "REJECT",
 }
 
+export const PO_STATUS_CONFIG: Record<
+  string,
+  { label: string; color: string; bgColor: string; borderColor: string }
+> = {
+  [PO_STATUS.HOLD]: {
+    label: "Lưu tạm",
+    color: "#0063D8",
+    bgColor: "#DCEEFF",
+    borderColor: "#2A7DDF",
+  },
+  [PO_STATUS.PARK]: {
+    label: "Parked",
+    color: "darkorange",
+    bgColor: "#F5CA89",
+    borderColor: "#EFCE22",
+  },
+  [PO_STATUS.SAVED]: {
+    label: "Saved",
+    color: "#0A915B",
+    bgColor: "#DEF2E0",
+    borderColor: "#0A915B",
+  },
+  [PO_STATUS.WAITING_APPROVAL]: {
+    label: "Chờ duyệt",
+    color: "#EFCE22",
+    bgColor: "#FCF0DD",
+    borderColor: "#F5CA89",
+  },
+  [PO_STATUS.APPROVED]: {
+    label: "Đã duyệt",
+    color: "#008000",
+    bgColor: "#DEF2E0",
+    borderColor: "#0A915B",
+  },
+  [PO_STATUS.REJECT]: {
+    label: "Từ chối",
+    color: "#cf1322",
+    bgColor: "#ffa39e",
+    borderColor: "#E11F1F",
+  },
+  [PO_STATUS.CHECK_AGAIN]: {
+    label: "Kiểm tra lại",
+    color: "orangered",
+    bgColor: "#FCF0DD",
+    borderColor: "orangered",
+  },
+  [PO_STATUS.CANCEL]: {
+    label: "Hủy",
+    color: "#cf1322",
+    bgColor: "#ffa39e",
+    borderColor: "#E11F1F",
+  },
+  [PO_STATUS.CLOSED]: {
+    label: "Đóng",
+    color: "#008000",
+    bgColor: "#DEF2E0",
+    borderColor: "#0A915B",
+  },
+  [PO_STATUS.COMPLETE]: {
+    label: "Hoàn thành",
+    color: "#008000",
+    bgColor: "#DEF2E0",
+    borderColor: "#0A915B",
+  },
+  [PO_STATUS.DELIVERYREFUSE]: {
+    label: "NCC từ chối giao hàng",
+    color: "orangered",
+    bgColor: "#FCF0DD",
+    borderColor: "orangered",
+  },
+  [PO_STATUS.DELIVERY]: {
+    label: "NCC giao hàng",
+    color: "#ff409c",
+    bgColor: "#ffeff7",
+    borderColor: "#ff409c",
+  },
+};
+
 export enum PO_BUDGET_STATUS {
   NEW = "NEW",
   WAIT_EPAY = "WAIT_EPAY",
@@ -31,21 +109,10 @@ export enum PO_REFERENCE_SOURCE {
   SHIPMENT_COST = "SHIPMENT_COST",
 }
 
-export const PO_STATUS_DISPLAY = [
-  { label: "Tất cả", value: undefined },
-  { label: "Lưu tạm", value: PO_STATUS.HOLD },
-  { label: "Parked", value: PO_STATUS.PARK },
-  { label: "Saved", value: PO_STATUS.SAVED },
-  { label: "Chờ duyệt", value: PO_STATUS.WAITING_APPROVAL },
-  { label: "Đã duyệt", value: PO_STATUS.APPROVED },
-  { label: "Hoàn thành", value: PO_STATUS.COMPLETE },
-  { label: "NCC từ chối giao hàng", value: PO_STATUS.DELIVERYREFUSE },
-  { label: "NCC giao hàng", value: PO_STATUS.DELIVERY },
-  { label: "Kiểm tra lại", value: PO_STATUS.CHECK_AGAIN },
-  { label: "Từ chối", value: PO_STATUS.REJECT },
-  { label: "Hủy", value: PO_STATUS.CANCEL },
-  { label: "Đóng", value: PO_STATUS.CLOSED },
-];
+export const PO_STATUS_DISPLAY = Object.values(PO_STATUS).map((value) => ({
+  value,
+  label: PO_STATUS_CONFIG[value]?.label || value,
+}));
 
 export const PO_REFERENCE_SOURCE_DISPLAY = [
   { label: "Tất cả", value: undefined },

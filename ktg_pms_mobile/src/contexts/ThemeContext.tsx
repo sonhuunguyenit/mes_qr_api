@@ -11,7 +11,7 @@ type AppThemeContextType = {
 export const AppThemeContext = createContext<AppThemeContextType | null>(null);
 
 const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [appTheme, setAppTheme] = useState<APP_THEME_TYPE>(
+  const [appTheme, _setAppTheme] = useState<APP_THEME_TYPE>(
     STORAGE_KEYS.APP_THEME,
   );
 
@@ -20,12 +20,17 @@ const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       const scheme = await StorageHelper.get<APP_THEME_TYPE>(APP_THEME);
 
       if (scheme) {
-        setAppTheme(scheme);
+        _setAppTheme(scheme);
       }
     };
 
     getAppTheme();
   }, []);
+
+  const setAppTheme = (theme: APP_THEME_TYPE) => {
+    _setAppTheme(theme);
+    StorageHelper.set(APP_THEME, theme);
+  };
 
   return (
     <AppThemeContext.Provider

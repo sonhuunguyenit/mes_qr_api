@@ -1,18 +1,24 @@
+import { useNavigation } from "@react-navigation/native";
 import { Icon } from "@rneui/base";
 import React from "react";
 import {
+  ActivityIndicator,
   Image,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
   ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Images } from "~/assets";
-import { Input } from "~/common";
-import { useTheme } from "~/hooks/useTheme";
-import { useNavigation } from "@react-navigation/native";
+import { Input } from "../Input";
+import { Row } from "../Row";
+import { Text } from "../Text";
+import { BOTTOM_SHEET_TIME_LOADING } from "~/constants";
 import { ROUTE_KEYS } from "~/constants/route";
+import { useSheet } from "~/contexts/SheetContext";
+
+import { useTheme } from "~/hooks/useTheme";
 
 type OnInput = {
   value?: string;
@@ -72,11 +78,31 @@ const Header = ({
   hasFilter,
   onFilter,
 }: Props) => {
-  const { colors, radius, spacing } = useTheme();
+  const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const navigation = useNavigation<any>();
+  const { isSheetLoading } = useSheet();
+  const [isSpinning, setIsSpinning] = React.useState(false);
+
+  const handleFilter = React.useCallback(() => {
+    if (!onFilter) return;
+    setIsSpinning(true);
+    setTimeout(() => {
+      onFilter();
+    }, 0);
+    setTimeout(() => {
+      setIsSpinning(false);
+    }, BOTTOM_SHEET_TIME_LOADING);
+  }, [onFilter]);
 
   const handleBack = () => {
-    onBack ? onBack() : navigation.goBack();
+    if (onBack) {
+      onBack();
+    } else if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate(ROUTE_KEYS.Home);
+    }
   };
 
   const handleNotification = () => {
@@ -92,17 +118,18 @@ const Header = ({
         <TouchableOpacity
           onPress={handleBack}
           activeOpacity={0.7}
-          style={styles.iconButton}
+          style={[styles.iconButton, { backgroundColor: colors.lgrayBg }]}
         >
           <Icon
             name="chevron-left"
-            type="entypo"
-            size={27}
+            type="feather"
+            size={26}
             color={colors.title}
           />
         </TouchableOpacity>
       );
     }
+
     return (
       <Image
         source={Images.splashIcon}
@@ -118,20 +145,17 @@ const Header = ({
     return (
       <>
         {title && (
-          <Text
-            style={[styles.titleText, { color: colors.title }]}
-            numberOfLines={1}
-          >
+          <Text size={16} weight="800" style={{ color: colors.title }}>
             {title}
           </Text>
         )}
         {subTitle && (
-          <Text
-            style={[styles.subTitleText, { color: colors.label }]}
-            numberOfLines={1}
-          >
-            {subTitle}
-          </Text>
+          <Row gap={5} margin={[3, 0, 0, 0]}>
+            <Icon name="circle" type="material" size={5} color={colors.title} />
+            <Text size={13} weight={"700"} color={colors.title}>
+              {subTitle}
+            </Text>
+          </Row>
         )}
       </>
     );
@@ -140,19 +164,27 @@ const Header = ({
   const renderRight = () => {
     if (rightSide) return rightSide;
     if (!showNotification) return null;
+
     return (
       <TouchableOpacity
         onPress={handleNotification}
         activeOpacity={0.7}
-        style={styles.iconButton}
+        style={[styles.iconButton, { backgroundColor: colors.lgrayBg }]}
       >
         <Icon
           name="notifications-outline"
           type="ionicon"
-          size={27}
-          color={colors.title}
+          size={23}
+          color={colors.lgrayIcon}
         />
-        {hasNotification && <View style={styles.badge} />}
+        {hasNotification && (
+          <View
+            style={[
+              styles.badge,
+              { backgroundColor: colors.badgeRed, borderColor: colors.white },
+            ]}
+          />
+        )}
       </TouchableOpacity>
     );
   };
@@ -166,22 +198,58 @@ const Header = ({
           onChangeText={onInput?.onChange}
           renderErrorMessage={false}
           leftIcon={
-            <Icon name="search" type="feather" size={18} color="#6B7280" />
+            <Icon
+              name="search"
+              type="feather"
+              size={18}
+              color={colors.slate400}
+            />
           }
           rightIcon={
             onFilter ? (
-              <TouchableOpacity onPress={onFilter} activeOpacity={0.7}>
-                <Icon
-                  name="filter"
-                  type="feather"
-                  size={18}
-                  color={hasFilter ? colors.primary : "#6B7280"}
-                />
-              </TouchableOpacity>
+              <View style={{ justifyContent: "center", alignItems: "center" }}>
+                {isSheetLoading || isSpinning ? (
+                  <View style={{ padding: 4 }}>
+                    <ActivityIndicator size="small" color={colors.active} />
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={handleFilter}
+                    activeOpacity={1}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    style={{
+                      padding: 4,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Icon
+                      name="sliders"
+                      type="feather"
+                      size={18}
+                      color={colors.active}
+                    />
+                    {hasFilter && (
+                      <View
+                        style={[
+                          styles.filterBadge,
+                          {
+                            backgroundColor: colors.badgeRed,
+                            borderColor: colors.white,
+                          },
+                        ]}
+                      />
+                    )}
+                  </TouchableOpacity>
+                )}
+              </View>
             ) : undefined
           }
           containerStyle={styles.inputContainer}
-          inputContainerStyle={styles.inputInnerContainer}
+          inputContainerStyle={[
+            styles.inputInnerContainer,
+            { backgroundColor: colors.card, borderColor: colors.border },
+          ]}
           inputStyle={[styles.inputText, { color: colors.title }]}
           leftIconContainerStyle={styles.leftIconContainer}
           rightIconContainerStyle={styles.rightIconContainer}
@@ -190,47 +258,84 @@ const Header = ({
     }
 
     return (
-      <TouchableOpacity
-        onPress={onFilter}
-        activeOpacity={0.7}
-        style={[styles.fakeInput, { backgroundColor: colors.white }]}
+      <View
+        style={[
+          styles.fakeInput,
+          { backgroundColor: colors.card, borderColor: colors.border },
+        ]}
       >
-        <View style={styles.fakeInputContent}>
-          <Icon name="search" type="feather" size={18} color="#6B7280" />
-          <Text style={styles.fakeInputPlaceholder}>
-            {onInput?.placeholder ?? "Tìm kiếm..."}
-          </Text>
-        </View>
-        {onFilter && (
-          <Icon name="sliders" type="feather" size={16} color={colors.active} />
-        )}
-      </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handleFilter}
+          activeOpacity={0.6}
+          style={styles.fakeInputTouch}
+        >
+          <View style={styles.fakeInputContent}>
+            <Icon
+              name="search"
+              type="feather"
+              size={18}
+              color={colors.slate400}
+            />
+            <Text
+              style={[styles.fakeInputPlaceholder, { color: colors.slate400 }]}
+            >
+              {onInput?.placeholder ?? "Tìm kiếm chi tiết..."}
+            </Text>
+          </View>
+
+          {onFilter && (
+            <View style={{ padding: 5 }}>
+              {isSheetLoading || isSpinning ? (
+                <ActivityIndicator size="small" color={colors.active} />
+              ) : (
+                <View>
+                  <Icon
+                    name="sliders"
+                    type="feather"
+                    size={16}
+                    color={colors.active}
+                  />
+                  {hasFilter && (
+                    <View
+                      style={[
+                        styles.filterBadge,
+                        {
+                          backgroundColor: colors.badgeRed,
+                          borderColor: colors.white,
+                        },
+                      ]}
+                    />
+                  )}
+                </View>
+              )}
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
     );
   };
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          marginHorizontal: spacing.xs,
-          paddingHorizontal: spacing.sm,
-          paddingVertical: spacing.sm,
-          borderRadius: radius.card,
-          backgroundColor: backgroundColor ?? colors.primary,
-        },
-        style,
-      ]}
-    >
-      {/* Left/Right dùng flex, center dùng absoluteFill để title luôn center thật sự */}
-      <View style={styles.header}>
-        <View style={styles.leftSection}>{renderLeft()}</View>
+    <View style={[styles.container, style]}>
+      <View
+        style={[
+          styles.headerBg,
+          {
+            backgroundColor: backgroundColor || colors.header,
+            paddingTop: insets.top,
+            paddingBottom: showSearch ? 30 : 5,
+          },
+        ]}
+      >
+        <View style={styles.header}>
+          <View style={styles.leftSection}>{renderLeft()}</View>
 
-        <View style={styles.centerSection} pointerEvents="none">
-          {renderCenter()}
+          <View style={styles.centerSection} pointerEvents="none">
+            {renderCenter()}
+          </View>
+
+          <View style={styles.rightSection}>{renderRight()}</View>
         </View>
-
-        <View style={styles.rightSection}>{renderRight()}</View>
       </View>
 
       {showSearch && <View style={styles.searchWrapper}>{renderSearch()}</View>}
@@ -240,14 +345,14 @@ const Header = ({
 
 const styles = StyleSheet.create({
   container: {
-    overflow: "hidden",
+    zIndex: 10,
   },
-
-  // Header row
+  headerBg: {
+    paddingHorizontal: 12,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    minHeight: 40,
   },
   leftSection: {
     flex: 1,
@@ -255,9 +360,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 1,
   },
-  // absoluteFill giúp title không bị lệch dù left/right khác chiều rộng
   centerSection: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -267,73 +375,78 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 1,
   },
-
-  // Logo & icons
   logo: {
     width: 100,
     height: 40,
   },
   iconButton: {
-    position: "relative",
+    width: 42,
+    height: 42,
+    borderRadius: 42,
     justifyContent: "center",
     alignItems: "center",
+    position: "relative",
   },
   badge: {
     position: "absolute",
-    top: 3,
-    right: 3,
+    top: 2,
+    right: 2,
+    width: 8,
+    height: 8,
+    borderRadius: 8,
+    borderWidth: 1.5,
+  },
+  filterBadge: {
+    position: "absolute",
+    top: -3,
+    right: -3,
     width: 10,
     height: 10,
-    borderRadius: 4,
-    backgroundColor: "#FF4D4F",
-    borderWidth: 1.5,
-    borderColor: "#FFFFFF",
+    borderRadius: 10,
+    borderWidth: 1,
   },
-
-  // Title
-  titleText: {
-    fontSize: 17,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  subTitleText: {
-    fontSize: 12,
-    fontWeight: "400",
-    textAlign: "center",
-    marginTop: 2,
-  },
-
-  // Search
+  titleText: {},
+  subTitleText: {},
   searchWrapper: {
-    marginTop: 4,
+    marginTop: -21,
+    paddingHorizontal: 10,
+    zIndex: 100,
   },
   fakeInput: {
-    height: 42,
-    borderRadius: 10,
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  fakeInputTouch: {
+    height: "100%",
+    width: "100%",
+    backgroundColor: "transparent",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 12,
   },
   fakeInputContent: {
+    flex: 1,
+    height: "100%",
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
   fakeInputPlaceholder: {
     fontSize: 14,
-    color: "#6B7280",
   },
   inputContainer: {
-    paddingHorizontal: 10,
-    height: 42,
+    paddingHorizontal: 0,
+    height: 50,
   },
   inputInnerContainer: {
-    height: 42,
-    borderRadius: 10,
+    height: 50,
+    borderRadius: 12,
     paddingHorizontal: 12,
-    borderWidth: 0,
-    borderBottomWidth: 0,
+    borderWidth: 1,
+    borderBottomWidth: 1,
   },
   inputText: {
     fontSize: 14,

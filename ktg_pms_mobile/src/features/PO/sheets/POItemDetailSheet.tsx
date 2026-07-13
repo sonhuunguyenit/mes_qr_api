@@ -1,9 +1,10 @@
 import { BottomSheetScrollView } from "@gorhom/bottom-sheet";
-import { Icon } from "@rneui/themed";
 import moment from "moment";
 import React from "react";
-import { StyleSheet, TouchableOpacity, View } from "react-native";
-import { Row, Spacer, Text } from "~/common";
+import { View } from "react-native";
+import { Column, Row } from "~/common";
+import { HeaderSheet } from "~/components";
+import { ColumnInfo } from "~/components/ColumnInfo";
 import { useTheme } from "~/hooks/useTheme";
 
 interface POItemDetailSheetProps {
@@ -12,12 +13,8 @@ interface POItemDetailSheetProps {
   onClose: () => void;
 }
 
-const POItemDetailSheet = ({
-  item,
-  dataUom,
-  onClose,
-}: POItemDetailSheetProps) => {
-  const { colors, spacing } = useTheme();
+const POItemDetailSheet = ({ item, dataUom }: POItemDetailSheetProps) => {
+  const { spacing } = useTheme();
 
   const formatNumberValue = (val: any) => {
     if (!val && val !== 0) return "0";
@@ -33,112 +30,80 @@ const POItemDetailSheet = ({
     );
   };
 
-  const DetailItem = ({
-    label,
-    value,
-  }: {
-    label: string;
-    value: string | number;
-  }) => (
-    <View style={styles.itemContainer}>
-      <Text color={colors.label} style={styles.label}>
-        {label}
-      </Text>
-      <Text bold color={colors.title} style={styles.value}>
-        {value || "---"}
-      </Text>
-    </View>
-  );
-
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.header}>
-        <View style={styles.headerTitle}>
-          <Icon name="info" type="feather" size={20} color={colors.primary} />
-          <Text bold size={16} color={colors.title} style={{ marginLeft: 8 }}>
-            Chi tiết Item của PO
-          </Text>
-        </View>
-        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-          <Icon name="x" type="feather" size={24} color={colors.label} />
-        </TouchableOpacity>
-      </View>
+    <View style={{ flex: 1 }}>
+      <HeaderSheet type="detail" />
 
-      <BottomSheetScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <Row gap={12}>
-          <DetailItem label="Close" value={item.itemClosed} />
-          <DetailItem label="Delete" value={item.itemDeleted} />
-        </Row>
+      <BottomSheetScrollView style={{ flex: 1, padding: spacing.sm }}>
+        <Column gap={12} align="stretch" padding={[10, 0]}>
+          <Row>
+            <ColumnInfo label="Close" value={item.itemClosed} />
+            <ColumnInfo label="Delete" value={item.itemDeleted} />
+          </Row>
 
-        <Row gap={12}>
-          <DetailItem
-            label="Item line"
-            value={item.itemLine || item.itemNo || "---"}
-          />
-          <DetailItem
-            label="Acc assignment"
-            value={item.acccateName || item.accountAssignment || item.acccate}
-          />
-        </Row>
+          <Row>
+            <ColumnInfo
+              label="Item line"
+              value={item.itemLine || item.itemNo || "---"}
+            />
+            <ColumnInfo
+              label="Acc assignment"
+              value={item.acccateName || item.accountAssignment || item.acccate}
+            />
+          </Row>
 
-        <Row gap={12}>
-          <DetailItem
-            label="Category"
-            value={item.itemcateName || item.itemCategory}
-          />
-          <DetailItem label="Mã vật tư" value={item.materialCode} />
-        </Row>
+          <Row>
+            <ColumnInfo
+              label="Category"
+              value={item.itemcateName || item.itemCategory}
+            />
+            <ColumnInfo label="Mã vật tư" value={item.materialCode} />
+          </Row>
 
-        <Row gap={12}>
-          <DetailItem
-            label="Mat Group"
-            value={item.materialGroupName || item.materialGroupCode}
-          />
-          <DetailItem
-            label="External MatGr"
-            value={
-              item.extMatGrName ||
-              item.externalMaterialGroupName ||
-              item.externalMaterialGroupCode
-            }
-          />
-        </Row>
+          <Row>
+            <ColumnInfo
+              label="Mat Group"
+              value={item.materialGroupName || item.materialGroupCode}
+            />
+            <ColumnInfo
+              label="External MatGr"
+              value={
+                item.extMatGrName ||
+                item.externalMaterialGroupName ||
+                item.externalMaterialGroupCode
+              }
+            />
+          </Row>
 
-        <Row gap={12}>
-          <DetailItem label="Mã tài sản" value={item.assetCode} />
-          <DetailItem label="Mã dịch vụ" value={item.serviceCode} />
-        </Row>
+          <Row>
+            <ColumnInfo label="Mã tài sản" value={item.assetCode} />
+            <ColumnInfo label="Mã dịch vụ" value={item.serviceCode} />
+          </Row>
 
-        <View style={styles.section}>
-          <DetailItem
+          <ColumnInfo
             label="Short text"
             value={item.shortText || item.materialName}
+            full
           />
-        </View>
 
-        <Row gap={12}>
-          <DetailItem
-            label="Số lượng lên PO"
-            value={formatNumberValue(item.quantityUptoPO)}
-          />
-          <DetailItem
-            label="Số lượng đã nhập kho"
-            value={formatNumberValue(item.warehouseQuantity)}
-          />
-        </Row>
+          <Row>
+            <ColumnInfo
+              label="Số lượng lên PO"
+              value={formatNumberValue(item.quantityUptoPO)}
+            />
+            <ColumnInfo
+              label="Số lượng đã nhập kho"
+              value={formatNumberValue(item.warehouseQuantity)}
+            />
+          </Row>
 
-        <View style={styles.section}>
-          <DetailItem
+          <ColumnInfo
             label="OUN (Đơn vị tính)"
             value={item.uomCode || item.ounName || item.unitName || item.uom}
+            full
           />
-        </View>
 
-        <View style={styles.section}>
-          <DetailItem
+          <ColumnInfo
             label="Thời gian dự kiến hàng về kho"
             value={
               item.deliveryDate || item.expectedDeliveryDate
@@ -147,162 +112,138 @@ const POItemDetailSheet = ({
                   )
                 : "---"
             }
+            full
           />
-        </View>
 
-        <Row gap={12}>
-          <DetailItem
-            label="Đơn giá RFQ"
-            value={formatNumberValue(item.grossPrice || item.rfqPrice)}
-          />
-          <DetailItem
-            label="Đơn vị tiền tệ RFQ"
-            value={item.currencyName || item.rfqCurrency}
-          />
-        </Row>
+          <Row>
+            <ColumnInfo
+              label="Đơn giá RFQ"
+              value={formatNumberValue(item.grossPrice || item.rfqPrice)}
+            />
+            <ColumnInfo
+              label="Đơn vị tiền tệ RFQ"
+              value={item.currencyName || item.rfqCurrency}
+            />
+          </Row>
 
-        <Row gap={12}>
-          <DetailItem
-            label="Hệ số giá RFQ (PER)"
-            value={item.per || item.rfqPer}
-          />
-          <DetailItem
-            label="Đơn giá PO"
-            value={formatNumberValue(
-              item.pricePo || item.grossPrice || item.netPrice,
-            )}
-          />
-        </Row>
+          <Row>
+            <ColumnInfo
+              label="Hệ số giá RFQ (PER)"
+              value={item.per || item.rfqPer}
+            />
+            <ColumnInfo
+              label="Đơn giá PO"
+              value={formatNumberValue(
+                item.pricePo || item.grossPrice || item.netPrice,
+              )}
+            />
+          </Row>
 
-        <Row gap={12}>
-          <DetailItem
-            label="Đơn vị tiền tệ PO"
-            value={
-              item.currencyPoName ||
-              item.currencyName ||
-              item.currencyPoCode ||
-              item.currencyCode
-            }
-          />
-          <DetailItem
-            label="Hệ số giá PO (PER)"
-            value={item.perPo || item.per}
-          />
-        </Row>
+          <Row>
+            <ColumnInfo
+              label="Đơn vị tiền tệ PO"
+              value={
+                item.currencyPoName ||
+                item.currencyName ||
+                item.currencyPoCode ||
+                item.currencyCode
+              }
+            />
+            <ColumnInfo
+              label="Hệ số giá PO (PER)"
+              value={item.perPo || item.per}
+            />
+          </Row>
 
-        <Row gap={12}>
-          <DetailItem label="OPU" value={getOPUName()} />
-          <DetailItem
-            label="Fund center"
-            value={item.fcPr || item.fundsCenterPr || item.fc}
-          />
-        </Row>
+          <Row>
+            <ColumnInfo label="OPU" value={getOPUName()} />
+            <ColumnInfo
+              label="Fund center"
+              value={item.fcPr || item.fundsCenterPr || item.fc}
+            />
+          </Row>
 
-        <Row gap={12}>
-          <DetailItem label="FP" value={item.fpPr || item.fp} />
-          <DetailItem
-            label="CI"
-            value={item.ciPr || item.commitmentItemCode || item.ci}
-          />
-        </Row>
+          <Row>
+            <ColumnInfo label="FP" value={item.fpPr || item.fp} />
+            <ColumnInfo
+              label="CI"
+              value={item.ciPr || item.commitmentItemCode || item.ci}
+            />
+          </Row>
 
-        <View style={styles.section}>
-          <DetailItem
+          <ColumnInfo
             label="CIName"
             value={item.ciPrName || item.ciname || item.commitmentItemName}
+            full
           />
-        </View>
 
-        <Row gap={12}>
-          <DetailItem label="Kỳ ngân sách" value={item.budgetPeriod} />
-          <DetailItem
-            label="Ngân sách Item"
-            value={formatNumberValue(
-              item.valueItem || item.budgetItem || item.valueItemOld,
-            )}
-          />
-        </Row>
+          <Row>
+            <ColumnInfo label="Kỳ ngân sách" value={item.budgetPeriod} />
+            <ColumnInfo
+              label="Ngân sách Item"
+              value={formatNumberValue(
+                item.valueItem || item.budgetItem || item.valueItemOld,
+              )}
+            />
+          </Row>
 
-        <View style={styles.section}>
-          <DetailItem
+          <Row>
+            <ColumnInfo
+              label="Dung sai giao thiếu (%)"
+              value={formatNumberValue(item.lowerTolerance)}
+            />
+            <ColumnInfo
+              label="Dung sai giao thừa (%)"
+              value={formatNumberValue(item.upperTolerance)}
+            />
+          </Row>
+
+          <ColumnInfo
             label="Ngân sách"
             value={formatNumberValue(item.totalBudget || item.totalBudgetOld)}
+            full
           />
-        </View>
 
-        <Row gap={12}>
-          <DetailItem
-            label="Vị trí kho hàng"
-            value={item.storageLocation || item.storeLocationCode}
-          />
-          <DetailItem
-            label="ValType"
-            value={item.valType || item.valuationType}
-          />
-        </Row>
+          <Row>
+            <ColumnInfo
+              label="Vị trí kho hàng"
+              value={item.storageLocation || item.storeLocationCode}
+            />
+            <ColumnInfo
+              label="ValType"
+              value={item.valType || item.valuationType}
+            />
+          </Row>
 
-        <Row gap={12}>
-          <DetailItem
-            label="Rfq"
-            value={
-              item.rfqCode || item.rfq || (item.__rfq__ && item.__rfq__.code)
-            }
-          />
-          <DetailItem label="Item Rfq" value={item.rfqItem || item.rfqItemNo} />
-        </Row>
+          <Row>
+            <ColumnInfo
+              label="Rfq"
+              value={
+                item.rfqCode || item.rfq || (item.__rfq__ && item.__rfq__.code)
+              }
+            />
+            <ColumnInfo
+              label="Item Rfq"
+              value={item.rfqItem || item.rfqItemNo}
+            />
+          </Row>
 
-        <Row gap={12}>
-          <DetailItem
-            label="PR"
-            value={item.prCode || item.purchaseRequisition}
-          />
-          <DetailItem
-            label="Item PR"
-            value={item.prItemCode || item.prItem || item.prItemNo}
-          />
-        </Row>
-        <Spacer size={40} />
+          <Row>
+            <ColumnInfo
+              label="PR"
+              value={item.prCode || item.purchaseRequisition}
+            />
+            <ColumnInfo
+              label="Item PR"
+              value={item.prItemCode || item.prItem || item.prItemNo}
+            />
+          </Row>
+
+          <View style={{ height: 40 }} />
+        </Column>
       </BottomSheetScrollView>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  headerTitle: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  closeBtn: {
-    padding: 4,
-  },
-  scrollContent: {
-    padding: 16,
-  },
-  section: {
-    marginBottom: 0,
-  },
-  itemContainer: {
-    flex: 1,
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 12,
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 14,
-  },
-});
 export default POItemDetailSheet;

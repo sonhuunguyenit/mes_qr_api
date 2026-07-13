@@ -58,7 +58,7 @@ export const Radio = ({
 }: RadioProps) => {
   const { colors, fonts } = useTheme();
 
-  const COLOR_MAP: Record<RadioColor, string> = {
+  const COLOR_MAP: Record<RadioColor, any> = {
     primary: colors.primary,
     success: colors.green,
     error: colors.red,
