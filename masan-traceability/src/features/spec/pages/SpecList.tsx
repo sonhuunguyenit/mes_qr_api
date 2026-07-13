@@ -11,6 +11,9 @@ import {
   ZoomOutOutlined,
   MenuUnfoldOutlined,
   ReloadOutlined,
+  HistoryOutlined,
+  MinusCircleOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -30,6 +33,8 @@ import {
   Upload,
   Collapse,
   Tooltip,
+  Table,
+  Progress,
 } from "antd";
 import dayjs from "dayjs";
 import React, { useState } from "react";
@@ -53,6 +58,7 @@ export const SpecList: React.FC = () => {
   const hscbs = useAppSelector((state) => state.hscb.hscbs);
   const dispatch = useAppDispatch();
   const [form] = Form.useForm();
+  const fileUploadList = Form.useWatch("fileUpload", form);
 
   // Temp states for filtering
   const [tempSpecCode, setTempSpecCode] = useState("");
@@ -91,6 +97,10 @@ export const SpecList: React.FC = () => {
     null,
   );
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
+  
+  // History Modal states
+  const [selectedHistorySpec, setSelectedHistorySpec] = useState<Spec | null>(null);
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
   const [nestedSearchItemCode, setNestedSearchItemCode] = useState("");
   const [nestedSearchItemName, setNestedSearchItemName] = useState("");
   const [nestedSearchItemType, setNestedSearchItemType] = useState("");
@@ -116,6 +126,56 @@ export const SpecList: React.FC = () => {
   const [isBomsDetailModalVisible, setIsBomsDetailModalVisible] =
     useState(false);
 
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiProgress, setAiProgress] = useState(0);
+
+  const fillFakeInfo = (file: any) => {
+    // Pick 1-2 random items
+    const randomItems = [...items]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, Math.floor(Math.random() * 2) + 1);
+    const selectedItemCodes = randomItems.map((item) => item.ItemCode);
+
+    const docNameWithoutExt =
+      file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
+
+    const generatedSpecCode = `TCCS-FG-${Math.floor(100 + Math.random() * 900)}`;
+
+    form.setFieldsValue({
+      SpecType: SpecType.TCCS,
+      SpecCode: generatedSpecCode,
+      SpecName: `Tiêu chuẩn ${docNameWithoutExt}`,
+      QloneCode: `QL1-TCCS-${Math.floor(100 + Math.random() * 900)}`,
+      ValidFrom: dayjs(),
+      ValidTo: dayjs().add(2, "year"),
+      itemCodes: selectedItemCodes,
+    });
+
+    message.success(
+      "Đã phân rã thông tin tài liệu PDF và tự động điền thành công!",
+    );
+  };
+
+  const handleAiParsing = (file: any) => {
+    setIsAiLoading(true);
+    setAiProgress(0);
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 5;
+      if (progress >= 100) {
+        setAiProgress(100);
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsAiLoading(false);
+          fillFakeInfo(file);
+        }, 400);
+      } else {
+        setAiProgress(progress);
+      }
+    }, 100);
+  };
+
   const handleDownloadFakePdf = () => {
     message.loading("Đang chuẩn bị tệp PDF...", 1);
     setTimeout(() => {
@@ -132,6 +192,27 @@ export const SpecList: React.FC = () => {
     setTimeout(() => {
       message.success("Lệnh in đã được gửi đến máy in thành công!");
     }, 1000);
+  };
+
+  const handlePreviewUploadedPdf = () => {
+    const file = fileUploadList?.[0];
+    if (!file) return;
+    let fileUrl = "";
+    if (file.originFileObj) {
+      fileUrl = URL.createObjectURL(file.originFileObj);
+    } else {
+      fileUrl = file.url || `/files/${file.name}`;
+    }
+    setSelectedSpecForPdf({
+      SpecId: "PREVIEW-SPEC",
+      SpecCode: form.getFieldValue("SpecCode") || "PREVIEW",
+      SpecName: form.getFieldValue("SpecName") || "Xem trước tài liệu",
+      SpecType: form.getFieldValue("SpecType") || SpecType.TCCS,
+      FileURL: fileUrl,
+      ValidFrom: "",
+      ValidTo: null,
+    });
+    setIsPdfDrawerVisible(true);
   };
 
   const handleDownloadFakeHscbPdf = () => {
@@ -158,6 +239,49 @@ export const SpecList: React.FC = () => {
       return dayjs(b.ValidFrom).unix() - dayjs(a.ValidFrom).unix();
     });
     return sorted[0];
+  };
+
+  const getMockSpecHistoryData = (record: Spec) => {
+    return [
+      {
+        key: "1",
+        time: record.ValidFrom 
+          ? dayjs(record.ValidFrom).subtract(3, "day").format("YYYY-MM-DD HH:mm") 
+          : "2026-07-08 09:00",
+        user: "Trần Thế Anh (QA Lead)",
+        type: "Tạo mới Spec",
+        details: `Khởi tạo tiêu chuẩn kỹ thuật ${record.SpecCode} cho sản phẩm/vật tư. Tên Spec: "${record.SpecName}". Phân loại: ${record.SpecType}.`,
+        status: "APPROVED",
+        approver: "Phạm Văn Minh (Director of QA)",
+        approveTime: record.ValidFrom 
+          ? dayjs(record.ValidFrom).subtract(3, "day").add(5, "hour").format("YYYY-MM-DD HH:mm") 
+          : "2026-07-08 14:00",
+      },
+      {
+        key: "2",
+        time: record.ValidFrom 
+          ? dayjs(record.ValidFrom).subtract(1, "day").format("YYYY-MM-DD HH:mm") 
+          : "2026-07-10 11:30",
+        user: "Trần Thế Anh (QA Lead)",
+        type: "Cập nhật chỉ tiêu",
+        details: `Điều chỉnh chỉ tiêu chất lượng, liên kết thêm danh sách vật tư áp dụng: ${record.SpecItems?.map((si) => si.ItemCode).join(", ") || "N/A"}.`,
+        status: "APPROVED",
+        approver: "Phạm Văn Minh (Director of QA)",
+        approveTime: record.ValidFrom 
+          ? dayjs(record.ValidFrom).subtract(1, "day").add(2, "hour").format("YYYY-MM-DD HH:mm") 
+          : "2026-07-10 13:30",
+      },
+      {
+        key: "3",
+        time: dayjs().subtract(2, "hour").format("YYYY-MM-DD HH:mm"),
+        user: "Vũ Hoàng My (QA Specialist)",
+        type: "Điều chỉnh tài liệu",
+        details: `Cập nhật bổ sung file tài liệu đính kèm (PDF) và mã QL-One: ${record.QloneCode || "Chưa gán"}.`,
+        status: "PENDING",
+        approver: "-",
+        approveTime: "-",
+      }
+    ];
   };
 
   const getHscbVersionStatusText = (version: any) => {
@@ -281,43 +405,22 @@ export const SpecList: React.FC = () => {
       title: "Vật tư áp dụng",
       dataIndex: "SpecItems",
       key: "SpecItems",
-      width: 300,
+      width: 180,
+      align: "center" as const,
       render: (specItemsList?: any[]) => {
         if (!specItemsList || specItemsList.length === 0) return "-";
-        if (specItemsList.length > 5) {
-          return (
-            <Tag
-              style={{
-                backgroundColor: "#096dd9",
-                color: "#ffffff",
-                fontWeight: "bold",
-                borderRadius: "12px",
-                padding: "2px 10px",
-                border: "none",
-              }}
-            >
-              {specItemsList.length} Item đang áp dụng
-            </Tag>
-          );
-        }
-        const codeString = specItemsList.map((si) => si.ItemCode).join(", ");
+        const count = specItemsList.length;
         return (
-          <div
+          <Tag
+            color="blue"
             style={{
-              maxWidth: "280px",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
+              fontWeight: "bold",
+              borderRadius: "12px",
+              padding: "2px 10px",
             }}
-            title={codeString}
           >
-            {specItemsList.map((si, idx) => (
-              <React.Fragment key={si.SpecItemId}>
-                <strong style={{ color: "#096dd9" }}>{si.ItemCode}</strong>
-                {idx < specItemsList.length - 1 ? ", " : ""}
-              </React.Fragment>
-            ))}
-          </div>
+            {count} {count > 1 ? "Items" : "Item"}
+          </Tag>
         );
       },
     },
@@ -389,18 +492,33 @@ export const SpecList: React.FC = () => {
       key: "action",
       align: "center" as const,
       fixed: "right" as const,
-      width: 120,
+      width: 150,
       render: (record: Spec) => (
-        <Tooltip title="Chi tiết">
-          <Button
-            type="primary"
-            icon={<EyeOutlined style={{ fontSize: "16px" }} />}
-            onClick={() => {
-              setSelectedDetailSpec(record);
-              setIsDetailModalVisible(true);
-            }}
-          />
-        </Tooltip>
+        <Space size="middle">
+          <Tooltip title="Chi tiết">
+            <Button
+              type="primary"
+              icon={<EyeOutlined style={{ fontSize: "16px" }} />}
+              onClick={() => {
+                setSelectedDetailSpec(record);
+                setIsDetailModalVisible(true);
+              }}
+            />
+          </Tooltip>
+          <Tooltip title="Lịch sử thay đổi">
+            <Button
+              icon={
+                <HistoryOutlined
+                  style={{ fontSize: "16px", color: PRIMARY_COLOR }}
+                />
+              }
+              onClick={() => {
+                setSelectedHistorySpec(record);
+                setIsHistoryModalVisible(true);
+              }}
+            />
+          </Tooltip>
+        </Space>
       ),
     },
   ];
@@ -570,6 +688,47 @@ export const SpecList: React.FC = () => {
         scroll={{ x: 1830 }}
       />
 
+      {/* AI Loading Modal */}
+      <Modal
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: PRIMARY_COLOR,
+            }}
+          >
+            <SyncOutlined
+              spin
+              style={{ fontSize: "18px", color: PRIMARY_COLOR }}
+            />
+            <span style={{ fontSize: "16px", fontWeight: "bold" }}>
+              AI Extracting: Đang phân rã thông tin
+            </span>
+          </div>
+        }
+        open={isAiLoading}
+        footer={null}
+        closable={false}
+        centered
+        maskClosable={false}
+        width={400}
+        zIndex={1100}
+      >
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <Progress
+            type="line"
+            percent={aiProgress}
+            strokeColor={PRIMARY_COLOR}
+            status="active"
+          />
+          <div style={{ marginTop: "16px", color: "#666", fontSize: "14px" }}>
+            Hệ thống đang trích xuất dữ liệu từ file PDF bằng AI...
+          </div>
+        </div>
+      </Modal>
+
       {/* 3. Add Modal */}
       <Modal
         title={
@@ -653,12 +812,20 @@ export const SpecList: React.FC = () => {
               }
               return e?.fileList;
             }}
+            style={{
+              marginBottom:
+                fileUploadList && fileUploadList.length > 0 ? "8px" : "24px",
+            }}
           >
             <Upload.Dragger
               name="files"
               accept=".pdf"
-              beforeUpload={() => false}
+              beforeUpload={(file) => {
+                handleAiParsing(file);
+                return false;
+              }}
               maxCount={1}
+              showUploadList={false}
             >
               <p className="ant-upload-drag-icon">
                 <InboxOutlined />
@@ -668,6 +835,133 @@ export const SpecList: React.FC = () => {
               </p>
             </Upload.Dragger>
           </Form.Item>
+
+          {fileUploadList &&
+            fileUploadList.length > 0 &&
+            (() => {
+              const file = fileUploadList[0];
+              return (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "#fafafa",
+                    border: "1px solid #e8e8e8",
+                    borderRadius: "8px",
+                    padding: "12px 16px",
+                    marginBottom: "24px",
+                    minHeight: "64px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      flex: 1,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "36px",
+                        height: "36px",
+                        background: "#ffffff",
+                        borderRadius: "6px",
+                        border: "1px solid #d9d9d9",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <FilePdfOutlined
+                        style={{ color: "#ff4d4f", fontSize: "20px" }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        overflow: "hidden",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontWeight: 500,
+                          color: "#262626",
+                          fontSize: "14px",
+                          lineHeight: "1.4",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                        title={file.name}
+                      >
+                        {file.name}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          color: "#8c8c8c",
+                          marginTop: "2px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: "inline-block",
+                            width: "5px",
+                            height: "5px",
+                            borderRadius: "50%",
+                            backgroundColor: "#52c41a",
+                          }}
+                        />
+                        Trích xuất dữ liệu bằng AI thành công
+                      </span>
+                    </div>
+                  </div>
+                  <Space size="middle">
+                    <Button
+                      type="default"
+                      icon={<EyeOutlined />}
+                      onClick={handlePreviewUploadedPdf}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        color: PRIMARY_COLOR,
+                        borderColor: PRIMARY_COLOR,
+                        fontWeight: 500,
+                        fontSize: "13px",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      Xem file
+                    </Button>
+                    <Button
+                      type="default"
+                      danger
+                      icon={<MinusCircleOutlined />}
+                      onClick={() => {
+                        form.setFieldsValue({ fileUpload: [] });
+                      }}
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        fontWeight: 500,
+                        fontSize: "13px",
+                        borderRadius: "6px",
+                      }}
+                    >
+                      Xóa file
+                    </Button>
+                  </Space>
+                </div>
+              );
+            })()}
 
           <Row gutter={16}>
             <Col span={12}>
@@ -913,16 +1207,22 @@ export const SpecList: React.FC = () => {
                 title: "Vật tư áp dụng",
                 dataIndex: "HscbItems",
                 key: "HscbItems",
+                width: 140,
+                align: "center" as const,
                 render: (hscbItems?: any[]) => {
                   if (!hscbItems || hscbItems.length === 0) return "-";
+                  const count = hscbItems.length;
                   return (
-                    <Space size={[4, 4]} wrap>
-                      {hscbItems.map((item) => (
-                        <Tag key={item.HscbItemId} color="cyan">
-                          {item.ItemCode}
-                        </Tag>
-                      ))}
-                    </Space>
+                    <Tag
+                      color="cyan"
+                      style={{
+                        fontWeight: "bold",
+                        borderRadius: "12px",
+                        padding: "2px 10px",
+                      }}
+                    >
+                      {count} {count > 1 ? "Items" : "Item"}
+                    </Tag>
                   );
                 },
               },
@@ -1087,7 +1387,7 @@ export const SpecList: React.FC = () => {
               {
                 title: (
                   <div style={{ padding: "4px 0" }}>
-                    <div style={{ fontWeight: "bold" }}>BOM đang áp dụng</div>
+                    <div style={{ fontWeight: "bold" }}>BOM áp dụng</div>
                     <Input
                       placeholder="Lọc BOM..."
                       prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
@@ -1257,7 +1557,7 @@ export const SpecList: React.FC = () => {
                   orientation={"left" as any}
                   style={{ margin: "20px 0 10px 0" }}
                 >
-                  Danh sách Hồ sơ tự công bố (HSCB) đang áp dụng
+                  Danh sách Hồ sơ tự công bố (HSCB) áp dụng
                 </Divider>
 
                 {sortedHscbVersions.length > 0 ? (
@@ -1291,6 +1591,123 @@ export const SpecList: React.FC = () => {
               </div>
             );
           })()}
+      </Modal>
+
+      {/* 4.1. Spec Revision History Modal */}
+      <Modal
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: PRIMARY_COLOR,
+            }}
+          >
+            <HistoryOutlined style={{ fontSize: "18px", color: PRIMARY_COLOR }} />
+            <span style={{ fontSize: "16px", fontWeight: "bold" }}>
+              Lịch sử Thay đổi & Phê duyệt - {selectedHistorySpec?.SpecCode}
+            </span>
+          </div>
+        }
+        open={isHistoryModalVisible}
+        onCancel={() => {
+          setIsHistoryModalVisible(false);
+          setSelectedHistorySpec(null);
+        }}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => {
+              setIsHistoryModalVisible(false);
+              setSelectedHistorySpec(null);
+            }}
+          >
+            Đóng
+          </Button>,
+        ]}
+        width={1000}
+      >
+        {selectedHistorySpec && (
+          <div style={{ marginTop: "15px" }}>
+            <Descriptions
+              bordered
+              size="small"
+              column={2}
+              style={{ marginBottom: "20px" }}
+            >
+              <Descriptions.Item label="Mã Tiêu Chuẩn">
+                <strong>{selectedHistorySpec.SpecCode}</strong>
+              </Descriptions.Item>
+              <Descriptions.Item label="Tên tiêu chuẩn">
+                <strong>{selectedHistorySpec.SpecName || "-"}</strong>
+              </Descriptions.Item>
+            </Descriptions>
+            
+            <Divider orientation={"left" as any} style={{ fontSize: "14px", fontWeight: 600, color: PRIMARY_COLOR }}>
+              Nhật ký thay đổi chi tiết
+            </Divider>
+
+            <Table
+              dataSource={getMockSpecHistoryData(selectedHistorySpec)}
+              columns={[
+                {
+                  title: "Thời gian chỉnh",
+                  dataIndex: "time",
+                  key: "time",
+                  width: 150,
+                  render: (text: string) => <span style={{ color: "#595959" }}>{text}</span>,
+                },
+                {
+                  title: "Người chỉnh",
+                  dataIndex: "user",
+                  key: "user",
+                  width: 200,
+                  render: (text: string) => <strong>{text}</strong>,
+                },
+                {
+                  title: "Phân loại",
+                  dataIndex: "type",
+                  key: "type",
+                  width: 140,
+                  render: (text: string) => <Tag color="blue">{text}</Tag>,
+                },
+                {
+                  title: "Chỉnh sửa thông tin gì",
+                  dataIndex: "details",
+                  key: "details",
+                  render: (text: string) => <span style={{ fontSize: "13px" }}>{text}</span>,
+                },
+                {
+                  title: "Lịch sử phê duyệt",
+                  key: "status",
+                  width: 240,
+                  render: (record: any) => {
+                    if (record.status === "APPROVED") {
+                      return (
+                        <div>
+                          <Tag color="green" style={{ marginBottom: 4 }}>Đã phê duyệt</Tag>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Bởi: <strong>{record.approver}</strong>
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Lúc: {record.approveTime}
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return <Tag color="gold">Chờ phê duyệt</Tag>;
+                    }
+                  },
+                },
+              ]}
+              pagination={false}
+              bordered
+              size="middle"
+            />
+          </div>
+        )}
       </Modal>
 
       {/* 4a. Applied BOMs Detail Modal */}

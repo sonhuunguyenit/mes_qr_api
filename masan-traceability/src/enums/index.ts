@@ -73,6 +73,6 @@ export const IpmsStatusConfig: Record<
   IpmsStatus,
   { label: string; color: string }
 > = {
-  [IpmsStatus.VALID]: { label: "Valid", color: "success" },
-  [IpmsStatus.INVALID]: { label: "Invalid", color: "error" },
+  [IpmsStatus.VALID]: { label: "Còn hiệu lực", color: "success" },
+  [IpmsStatus.INVALID]: { label: "Hết hiệu lực", color: "error" },
 };

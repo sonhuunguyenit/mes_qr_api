@@ -54,7 +54,7 @@ import { FilterCard } from "../../../components";
     </Col>
     {/* Additional filter columns here */}
   </Row>
-</FilterCard>
+</FilterCard>;
 ```
 
 ---
@@ -136,7 +136,7 @@ import { AppTable } from "../../../components";
     showTotal: (total) => `Tổng cộng ${total} dòng`,
   }}
   bordered
-/>
+/>;
 ```
 
 ## 5. Action Column & Details Modal Layout

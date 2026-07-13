@@ -15,6 +15,8 @@ import {
   MenuUnfoldOutlined,
   ReloadOutlined,
   SyncOutlined,
+  PictureOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import {
   Button,
@@ -63,9 +65,22 @@ export const HscbList: React.FC = () => {
   const items = useAppSelector((state) => state.item.items);
   const shttMappings = useAppSelector((state) => state.shtt.mappings);
   const ipmsInfo = useAppSelector((state) => state.shtt.ipmsInfo);
+  const facilities = useAppSelector((state) => state.facility.facilities) || [];
   const dispatch = useAppDispatch();
   const [form] = Form.useForm();
   const fileUploadList = Form.useWatch("fileUpload", form);
+  const selectedProducingFacilityIds =
+    Form.useWatch("producingFacilityIds", form) || [];
+
+  const availableAttpLicenses = facilities
+    .filter((f) => selectedProducingFacilityIds.includes(f.FacilityId))
+    .flatMap((f) => f.Licenses || [])
+    .filter((l) => l.LicenseType === "ATVSTP");
+
+  const attpOptions = availableAttpLicenses.map((l) => ({
+    value: l.LicenseNo,
+    label: `${l.LicenseNo} (${facilities.find((f) => f.FacilityId === l.FacilityId)?.FacilityName})`,
+  }));
 
   // Temp states for filtering
   const [tempHscbCode, setTempHscbCode] = useState("");
@@ -83,6 +98,62 @@ export const HscbList: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [selectedApprovalStatus, setSelectedApprovalStatus] =
     useState<string>("ALL");
+
+  const getMockHistoryData = (record: Hscb) => {
+    const latest = record.HscbVersions ? record.HscbVersions[0] : null;
+    const name = record.LegalProductName || "Sản phẩm";
+
+    return [
+      {
+        key: "1",
+        time: latest?.ValidFrom
+          ? dayjs(latest.ValidFrom)
+              .subtract(2, "day")
+              .format("YYYY-MM-DD HH:mm")
+          : "2026-07-10 14:30",
+        user: "Nguyễn Minh Đức (QA Specialist)",
+        type: "Khởi tạo hồ sơ",
+        details: `Tạo mới hồ sơ tự công bố ${record.HscbCode} cho sản phẩm "${name}". Liên kết TCCS: ${record.SpecId || "N/A"}.`,
+        status: "APPROVED",
+        approver: "Trần Quốc Bảo (QA Manager)",
+        approveTime: latest?.ValidFrom
+          ? dayjs(latest.ValidFrom)
+              .subtract(2, "day")
+              .add(4, "hour")
+              .format("YYYY-MM-DD HH:mm")
+          : "2026-07-10 18:30",
+      },
+      {
+        key: "2",
+        time: latest?.ValidFrom
+          ? dayjs(latest.ValidFrom)
+              .subtract(1, "day")
+              .format("YYYY-MM-DD HH:mm")
+          : "2026-07-11 10:15",
+        user: "Nguyễn Minh Đức (QA Specialist)",
+        type: "Cập nhật tài liệu",
+        details: `Tải lên file PDF tự công bố mới, cập nhật mã Artwork kiểm soát: ${latest?.ArtworkCode || "AW-2026-01"} và số giấy phép ATTP: ${latest?.AttpCode || "ATTP-2026-09"}.`,
+        status: "APPROVED",
+        approver: "Trần Quốc Bảo (QA Manager)",
+        approveTime: latest?.ValidFrom
+          ? dayjs(latest.ValidFrom)
+              .subtract(1, "day")
+              .add(2, "hour")
+              .format("YYYY-MM-DD HH:mm")
+          : "2026-07-11 12:15",
+      },
+      {
+        key: "3",
+        time: dayjs().subtract(5, "hour").format("YYYY-MM-DD HH:mm"),
+        user: "Lê Thị Hồng (QA Officer)",
+        type: "Điều chỉnh thông tin",
+        details: `Cập nhật bổ sung danh sách mã vật tư áp dụng (thêm mã mới).`,
+        status: "PENDING",
+        approver: "-",
+        approveTime: "-",
+      },
+    ];
+  };
 
   const handleSearch = () => {
     setSearchHscbCode(tempHscbCode);
@@ -148,9 +219,17 @@ export const HscbList: React.FC = () => {
             ? selectedSpec.SpecId
             : undefined
           : currentValues.SpecId,
+      LegalProductName:
+        editMode === "create"
+          ? selectedSpec
+            ? `Tự công bố ${selectedSpec.SpecName}`
+            : "Nước mắm Nam Ngư Đệ Nhị"
+          : currentValues.LegalProductName,
       VersionName: `Bản tự công bố - ${docNameWithoutExt}`,
       ValidFrom: dayjs(),
       ValidTo: dayjs().add(3, "year"),
+      AttpCode: `ATTP-2026-${Math.floor(10000 + Math.random() * 90000)}A`,
+      ArtworkCode: `AW-2026-${specCode.replace(/[^A-Za-z0-9]/g, "") || "NNDN"}-V1`,
       itemCodes: selectedItemCodes,
       primaryBrandCode: `SHTT-PB-${dayjs().year()}-${Math.floor(10000 + Math.random() * 90000)}`,
       secondaryBrandCode: `SHTT-SB-${dayjs().year()}-${Math.floor(10000 + Math.random() * 90000)}`,
@@ -161,6 +240,8 @@ export const HscbList: React.FC = () => {
           shttCode: `SHTT-SB-${dayjs().year()}-ADD-${Math.floor(1000 + Math.random() * 9000)}`,
         },
       ],
+      declaringFacilityId: "FAC-001",
+      producingFacilityIds: ["FAC-002", "FAC-003"],
     });
 
     message.success(
@@ -188,6 +269,8 @@ export const HscbList: React.FC = () => {
     }, 100);
   };
 
+  const [submitStatus, setSubmitStatus] = useState<DocStatus>(DocStatus.APPROVED);
+
   // Details Modal states
   const [selectedDetailHscb, setSelectedDetailHscb] = useState<Hscb | null>(
     null,
@@ -200,6 +283,12 @@ export const HscbList: React.FC = () => {
   );
   const [isPdfDrawerVisible, setIsPdfDrawerVisible] = useState(false);
   const [pdfZoom, setPdfZoom] = useState(100);
+
+  // History Modal states
+  const [selectedHistoryHscb, setSelectedHistoryHscb] = useState<Hscb | null>(
+    null,
+  );
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
 
   const handleDownloadFakePdf = () => {
     message.loading("Đang chuẩn bị tệp PDF...", 1);
@@ -347,6 +436,18 @@ export const HscbList: React.FC = () => {
             ValidTo: values.ValidTo
               ? values.ValidTo.format("YYYY-MM-DD")
               : null,
+            AttpCode: values.AttpCode,
+            ArtworkCode: values.ArtworkCode,
+            Status: submitStatus,
+            AppliedStandards: (values.appliedStandards || []).map(
+              (s: any, idx: number) => ({
+                Id: `HSCB-STD-${Date.now()}-${idx}`,
+                HscbVersionId: versionId,
+                StandardType: s.StandardType,
+                StandardCode: s.StandardCode,
+                Description: s.Description || "",
+              }),
+            ),
             HscbItems: (values.itemCodes || []).map(
               (code: string, index: number) => ({
                 HscbItemId: `HSCB-ITEM-${Date.now()}-${index}`,
@@ -361,6 +462,9 @@ export const HscbList: React.FC = () => {
 
       const updatedHscb: Hscb = {
         ...editingHscb,
+        LegalProductName: values.LegalProductName,
+        declaringFacilityId: values.declaringFacilityId,
+        producingFacilityIds: values.producingFacilityIds,
         HscbVersions: updatedVersions,
       };
 
@@ -407,7 +511,11 @@ export const HscbList: React.FC = () => {
         setShttMappingsForVersion({ versionId, mappings: newShttMappings }),
       );
       dispatch(updateHscb(updatedHscb));
-      message.success("Cập nhật hồ sơ tự công bố thành công!");
+      message.success(
+        `${
+          submitStatus === DocStatus.APPROVED ? "Phát hành" : "Lưu nháp"
+        } hồ sơ tự công bố thành công!`,
+      );
       setIsModalVisible(false);
       setEditingHscb(null);
       setEditMode("create");
@@ -449,7 +557,18 @@ export const HscbList: React.FC = () => {
         FileURL: fileUrl,
         ValidFrom: validFromStr,
         ValidTo: values.ValidTo ? values.ValidTo.format("YYYY-MM-DD") : null,
-        Status: DocStatus.APPROVED,
+        Status: submitStatus,
+        AttpCode: values.AttpCode,
+        ArtworkCode: values.ArtworkCode,
+        AppliedStandards: (values.appliedStandards || []).map(
+          (s: any, idx: number) => ({
+            Id: `HSCB-STD-${Date.now()}-${idx}`,
+            HscbVersionId: newVersionId,
+            StandardType: s.StandardType,
+            StandardCode: s.StandardCode,
+            Description: s.Description || "",
+          }),
+        ),
         HscbItems: (values.itemCodes || []).map(
           (code: string, index: number) => ({
             HscbItemId: `HSCB-ITEM-${Date.now()}-${index}`,
@@ -461,6 +580,10 @@ export const HscbList: React.FC = () => {
 
       const updatedHscb: Hscb = {
         ...editingHscb,
+        declaringFacilityId:
+          values.declaringFacilityId || editingHscb.declaringFacilityId,
+        producingFacilityIds:
+          values.producingFacilityIds || editingHscb.producingFacilityIds,
         HscbVersions: [...updatedVersions, newVersion],
       };
 
@@ -510,7 +633,11 @@ export const HscbList: React.FC = () => {
         }),
       );
       dispatch(updateHscb(updatedHscb));
-      message.success("Thêm Phụ lục / Nhãn bổ sung thành công!");
+      message.success(
+        `${
+          submitStatus === DocStatus.APPROVED ? "Phát hành" : "Lưu nháp"
+        } Phụ lục / Nhãn bổ sung thành công!`,
+      );
       setIsModalVisible(false);
       setEditingHscb(null);
       setEditMode("create");
@@ -535,6 +662,9 @@ export const HscbList: React.FC = () => {
         HscbId: newHscbId,
         HscbCode: values.HscbCode,
         SpecId: values.SpecId,
+        LegalProductName: values.LegalProductName,
+        declaringFacilityId: values.declaringFacilityId,
+        producingFacilityIds: values.producingFacilityIds,
         HscbVersions: [
           {
             HscbVersionId: newVersionId,
@@ -547,7 +677,18 @@ export const HscbList: React.FC = () => {
             ValidTo: values.ValidTo
               ? values.ValidTo.format("YYYY-MM-DD")
               : null,
-            Status: DocStatus.APPROVED,
+            Status: submitStatus,
+            AttpCode: values.AttpCode,
+            ArtworkCode: values.ArtworkCode,
+            AppliedStandards: (values.appliedStandards || []).map(
+              (s: any, idx: number) => ({
+                Id: `HSCB-STD-${Date.now()}-${idx}`,
+                HscbVersionId: newVersionId,
+                StandardType: s.StandardType,
+                StandardCode: s.StandardCode,
+                Description: s.Description || "",
+              }),
+            ),
             HscbItems: values.itemCodes.map((code: string, index: number) => ({
               HscbItemId: `HSCB-ITEM-${Date.now()}-${index}`,
               HscbVersionId: newVersionId,
@@ -604,7 +745,11 @@ export const HscbList: React.FC = () => {
       }
 
       dispatch(addHscb(newHscb));
-      message.success("Thêm hồ sơ tự công bố thành công!");
+      message.success(
+        `${
+          submitStatus === DocStatus.APPROVED ? "Phát hành" : "Lưu nháp"
+        } hồ sơ tự công bố thành công!`,
+      );
       setIsModalVisible(false);
       form.resetFields();
     }
@@ -665,15 +810,26 @@ export const HscbList: React.FC = () => {
     form.setFieldsValue({
       HscbCode: record.HscbCode,
       SpecId: record.SpecId,
+      LegalProductName: record.LegalProductName || "",
+      declaringFacilityId: record.declaringFacilityId || undefined,
+      producingFacilityIds: record.producingFacilityIds || [],
       VersionName: latest?.VersionName || "",
       ValidFrom: latest?.ValidFrom ? dayjs(latest.ValidFrom) : null,
       ValidTo: latest?.ValidTo ? dayjs(latest.ValidTo) : null,
+      AttpCode: latest?.AttpCode || "",
+      ArtworkCode: latest?.ArtworkCode || "",
       itemCodes: latest?.HscbItems?.map((it) => it.ItemCode) || [],
       primaryBrandCode: primaryBrand,
       secondaryBrandCode: secondaryBrand,
       industrialDesignCode: industrialDesign,
       additionalShtt: additional,
       fileUpload: fileList,
+      appliedStandards:
+        (latest as any)?.AppliedStandards?.map((s: any) => ({
+          StandardType: s.StandardType,
+          StandardCode: s.StandardCode,
+          Description: s.Description || "",
+        })) || [],
     });
 
     setIsModalVisible(true);
@@ -722,9 +878,14 @@ export const HscbList: React.FC = () => {
     form.setFieldsValue({
       HscbCode: record.HscbCode,
       SpecId: record.SpecId,
+      LegalProductName: record.LegalProductName || "",
+      declaringFacilityId: record.declaringFacilityId || undefined,
+      producingFacilityIds: record.producingFacilityIds || [],
       VersionName: "", // Để trống để nhập mới
       ValidFrom: null, // Nhập ngày hiệu lực mới cho phụ lục
       ValidTo: null,
+      AttpCode: "",
+      ArtworkCode: "",
       itemCodes: latest?.HscbItems?.map((it) => it.ItemCode) || [], // Kế thừa danh sách vật tư
       primaryBrandCode: primaryBrand, // Kế thừa SHTT
       secondaryBrandCode: secondaryBrand, // Kế thừa SHTT
@@ -760,6 +921,8 @@ export const HscbList: React.FC = () => {
         HscbId: newHscbId,
         HscbCode: values.HscbCode || "CHƯA_NHẬP_MÃ",
         SpecId: values.SpecId,
+        LegalProductName:
+          values.LegalProductName || "Chưa nhập tên sản phẩm công bố",
         HscbVersions: [
           {
             HscbVersionId: newVersionId,
@@ -773,6 +936,8 @@ export const HscbList: React.FC = () => {
               ? values.ValidTo.format("YYYY-MM-DD")
               : null,
             Status: DocStatus.APPROVED,
+            AttpCode: values.AttpCode || "",
+            ArtworkCode: values.ArtworkCode || "",
             HscbItems: (values.itemCodes || []).map(
               (code: string, index: number) => ({
                 HscbItemId: `PREVIEW-ITEM-${Date.now()}-${index}`,
@@ -813,7 +978,7 @@ export const HscbList: React.FC = () => {
   // Main columns
   const columns = [
     {
-      title: "Mã Hồ Sơ",
+      title: "Số Tự công bố",
       dataIndex: "HscbCode",
       key: "HscbCode",
       width: 150,
@@ -821,6 +986,38 @@ export const HscbList: React.FC = () => {
       render: (text: string) => (
         <strong style={{ color: "#096dd9" }}>{text}</strong>
       ),
+    },
+    {
+      title: "Tên sản phẩm công bố",
+      dataIndex: "LegalProductName",
+      key: "LegalProductName",
+      width: 220,
+      render: (text: string) =>
+        text ? (
+          <strong style={{ color: "#262626" }}>{text}</strong>
+        ) : (
+          <span style={{ color: "#999" }}>-</span>
+        ),
+    },
+    {
+      title: "Trạng thái duyệt",
+      key: "ApprovalStatus",
+      width: 160,
+      align: "center" as const,
+      render: (record: Hscb) => {
+        const latest = getLatestVersion(record);
+        if (!latest || !latest.Status) return "-";
+        switch (latest.Status) {
+          case DocStatus.APPROVED:
+            return <Tag color="green">Đã duyệt</Tag>;
+          case DocStatus.PENDING:
+            return <Tag color="gold">Chờ duyệt</Tag>;
+          case DocStatus.REJECTED:
+            return <Tag color="red">Từ chối</Tag>;
+          default:
+            return <Tag>{latest.Status}</Tag>;
+        }
+      },
     },
     {
       title: "Tiêu chuẩn cơ sở",
@@ -889,23 +1086,31 @@ export const HscbList: React.FC = () => {
       },
     },
     {
-      title: "Trạng thái duyệt",
-      key: "ApprovalStatus",
+      title: "Số giấy ATTP (Trên HSCB)",
+      key: "AttpCode",
       width: 160,
       align: "center" as const,
       render: (record: Hscb) => {
         const latest = getLatestVersion(record);
-        if (!latest || !latest.Status) return "-";
-        switch (latest.Status) {
-          case DocStatus.APPROVED:
-            return <Tag color="green">Đã duyệt</Tag>;
-          case DocStatus.PENDING:
-            return <Tag color="gold">Chờ duyệt</Tag>;
-          case DocStatus.REJECTED:
-            return <Tag color="red">Từ chối</Tag>;
-          default:
-            return <Tag>{latest.Status}</Tag>;
-        }
+        return latest?.AttpCode ? (
+          <Tag color="blue">{latest.AttpCode}</Tag>
+        ) : (
+          <span style={{ color: "#999" }}>-</span>
+        );
+      },
+    },
+    {
+      title: "Mã kiểm soát AW",
+      key: "ArtworkCode",
+      width: 160,
+      align: "center" as const,
+      render: (record: Hscb) => {
+        const latest = getLatestVersion(record);
+        return latest?.ArtworkCode ? (
+          <Tag color="purple">{latest.ArtworkCode}</Tag>
+        ) : (
+          <span style={{ color: "#999" }}>-</span>
+        );
       },
     },
     {
@@ -939,7 +1144,7 @@ export const HscbList: React.FC = () => {
       key: "action",
       align: "center" as const,
       fixed: "right" as const,
-      width: 140,
+      width: 190,
       render: (record: Hscb) => (
         <Space size="middle">
           <Tooltip title="Chi tiết">
@@ -968,6 +1173,19 @@ export const HscbList: React.FC = () => {
                 />
               }
               onClick={() => handleOpenAppendModal(record)}
+            />
+          </Tooltip>
+          <Tooltip title="Lịch sử thay đổi">
+            <Button
+              icon={
+                <HistoryOutlined
+                  style={{ fontSize: "16px", color: PRIMARY_COLOR }}
+                />
+              }
+              onClick={() => {
+                setSelectedHistoryHscb(record);
+                setIsHistoryModalVisible(true);
+              }}
             />
           </Tooltip>
         </Space>
@@ -1187,10 +1405,10 @@ export const HscbList: React.FC = () => {
         }}
         bordered
         size="middle"
-        scroll={{ x: 1440 }}
+        scroll={{ x: 1800 }}
       />
 
-      {/* AI Thinking Loading Modal */}
+      {/* AI Extracting Loading Modal */}
       <Modal
         title={
           <div
@@ -1206,7 +1424,7 @@ export const HscbList: React.FC = () => {
               style={{ fontSize: "18px", color: PRIMARY_COLOR }}
             />
             <span style={{ fontSize: "16px", fontWeight: "bold" }}>
-              AI Thinking: Đang phân rã thông tin
+              AI Extracting: Đang phân rã thông tin
             </span>
           </div>
         }
@@ -1257,7 +1475,7 @@ export const HscbList: React.FC = () => {
             )}
             <span style={{ fontSize: "16px", fontWeight: "bold" }}>
               {editMode === "overwrite"
-                ? "Cập Nhật Hồ Sơ Tự Công Bố (Ghi đè)"
+                ? "Cập Nhật Hồ Sơ Tự Công Bố"
                 : editMode === "append"
                   ? "Thêm Phụ Lục / Nhãn Bổ Sung"
                   : "Thêm Hồ Sơ Tự Công Bố Mới"}
@@ -1271,7 +1489,7 @@ export const HscbList: React.FC = () => {
           setEditMode("create");
           form.resetFields();
         }}
-        width={750}
+        width={900}
         footer={[
           <div
             key="footer-container"
@@ -1295,8 +1513,25 @@ export const HscbList: React.FC = () => {
             >
               Hủy
             </Button>
-            <Button key="submit" type="primary" onClick={() => form.submit()}>
-              Lưu
+            <Button
+              key="draft"
+              onClick={() => {
+                setSubmitStatus(DocStatus.PENDING);
+                setTimeout(() => form.submit(), 50);
+              }}
+            >
+              Lưu nháp
+            </Button>
+            <Button
+              key="publish"
+              type="primary"
+              style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
+              onClick={() => {
+                setSubmitStatus(DocStatus.APPROVED);
+                setTimeout(() => form.submit(), 50);
+              }}
+            >
+              Phát hành
             </Button>
           </div>,
         ]}
@@ -1306,11 +1541,11 @@ export const HscbList: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name="HscbCode"
-                label="Mã Hồ Sơ"
+                label="Số Tự công bố"
                 rules={[
                   {
                     required: true,
-                    message: "Vui lòng nhập Mã hồ sơ công bố!",
+                    message: "Vui lòng nhập Số Tự công bố!",
                   },
                 ]}
               >
@@ -1323,7 +1558,7 @@ export const HscbList: React.FC = () => {
             <Col span={12}>
               <Form.Item
                 name="SpecId"
-                label="Tiêu chuẩn đính kèm (Spec)"
+                label="Tiêu chuẩn cơ sở"
                 rules={[
                   { required: true, message: "Vui lòng chọn tiêu chuẩn!" },
                 ]}
@@ -1334,6 +1569,17 @@ export const HscbList: React.FC = () => {
                   placeholder="Chọn tiêu chuẩn..."
                   showSearch
                   disabled={editMode !== "create"}
+                  onChange={(selectedSpecId) => {
+                    const selectedSpec = specs.find(
+                      (s) => s.SpecId === selectedSpecId,
+                    );
+                    if (selectedSpec && selectedSpec.SpecItems) {
+                      const itemCodes = selectedSpec.SpecItems.map(
+                        (si) => si.ItemCode,
+                      );
+                      form.setFieldsValue({ itemCodes });
+                    }
+                  }}
                   filterOption={(input, option) =>
                     (option?.label ?? "")
                       .toLowerCase()
@@ -1353,8 +1599,108 @@ export const HscbList: React.FC = () => {
           <Row gutter={16}>
             <Col span={24}>
               <Form.Item
+                name="LegalProductName"
+                label="Tên sản phẩm công bố"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng nhập Tên sản phẩm công bố!",
+                  },
+                ]}
+              >
+                <Input
+                  placeholder="Ví dụ: Nước mắm Nam Ngư Đệ Nhị"
+                  disabled={editMode === "append"}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="declaringFacilityId"
+                label="Thương nhân công bố"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng chọn Thương nhân công bố!",
+                  },
+                ]}
+              >
+                <Select
+                  placeholder="Chọn thương nhân công bố..."
+                  showSearch
+                  optionFilterProp="label"
+                  disabled={editMode === "append"}
+                  options={facilities
+                    .filter((f) => f.FacilityType === "CONG_TY")
+                    .map((f) => {
+                      const gpkd = f.Licenses?.find(
+                        (l) => l.LicenseType === "GPKD",
+                      );
+                      const gpkdSuffix = gpkd ? ` (GPKD: ${gpkd.LicenseNo})` : "";
+                      return {
+                        value: f.FacilityId,
+                        label: `${f.FacilityCode} - ${f.FacilityName}${gpkdSuffix}`,
+                      };
+                    })}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="producingFacilityIds"
+                label="Sản xuất tại"
+                rules={[
+                  {
+                    required: true,
+                    message: "Vui lòng chọn ít nhất một nơi sản xuất!",
+                  },
+                ]}
+              >
+                <Select
+                  mode="multiple"
+                  placeholder="Chọn nơi sản xuất..."
+                  showSearch
+                  optionFilterProp="label"
+                  disabled={editMode === "append"}
+                  options={facilities
+                    .filter((f) => f.FacilityType === "NHA_MAY")
+                    .map((f) => ({
+                      value: f.FacilityId,
+                      label: `${f.FacilityCode} - ${f.FacilityName}`,
+                    }))}
+                  onChange={(facilityIds: string[]) => {
+                    const matchLicenses = facilities
+                      .filter((f) => facilityIds.includes(f.FacilityId))
+                      .flatMap((f) => f.Licenses || [])
+                      .filter((l) => l.LicenseType === "ATVSTP");
+
+                    const currentAttp = form.getFieldValue("AttpCode");
+                    const exists = matchLicenses.some(
+                      (l) => l.LicenseNo === currentAttp,
+                    );
+                    if (!exists) {
+                      if (matchLicenses.length > 0) {
+                        form.setFieldsValue({
+                          AttpCode: matchLicenses[0].LicenseNo,
+                        });
+                      } else {
+                        form.setFieldsValue({ AttpCode: undefined });
+                      }
+                    }
+                  }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item
                 name="VersionName"
-                label="Tên Phiên Bản (VersionName)"
+                label="Tên Phiên Bản"
                 rules={[
                   { required: true, message: "Vui lòng nhập Tên phiên bản!" },
                 ]}
@@ -1364,9 +1710,153 @@ export const HscbList: React.FC = () => {
             </Col>
           </Row>
 
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="AttpCode"
+                label="Số giấy ATTP (Trên HSCB)"
+                rules={[
+                  { required: true, message: "Vui lòng chọn Số giấy ATTP!" },
+                ]}
+              >
+                <Select
+                  placeholder={
+                    selectedProducingFacilityIds.length === 0
+                      ? "Chọn nơi sản xuất trước..."
+                      : "Chọn Số giấy ATTP..."
+                  }
+                  showSearch
+                  allowClear
+                  options={attpOptions}
+                  notFoundContent={
+                    selectedProducingFacilityIds.length === 0
+                      ? "Chưa chọn nơi sản xuất"
+                      : "Không tìm thấy giấy phép ATVSTP"
+                  }
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="ArtworkCode"
+                label="Mã kiểm soát AW"
+                rules={[
+                  { required: true, message: "Vui lòng nhập Mã kiểm soát AW!" },
+                ]}
+              >
+                <Input placeholder="Ví dụ: AW-2026-NNDN-V2" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: "13px",
+              marginTop: "16px",
+              marginBottom: "12px",
+              color: PRIMARY_COLOR,
+              display: "flex",
+              alignItems: "center",
+              borderBottom: "1px solid #f0f0f0",
+              paddingBottom: "6px",
+            }}
+          >
+            <span
+              style={{
+                width: "4px",
+                height: "12px",
+                background: PRIMARY_COLOR,
+                marginRight: "6px",
+                display: "inline-block",
+                borderRadius: "2px",
+              }}
+            ></span>
+            Tiêu chuẩn / Quy chuẩn áp dụng (TCVN / QCVN)
+          </div>
+          <Form.List name="appliedStandards">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }) => (
+                  <Row
+                    gutter={12}
+                    key={key}
+                    align="middle"
+                    style={{ marginBottom: 8 }}
+                  >
+                    <Col span={6}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "StandardType"]}
+                        rules={[{ required: true, message: "Chọn loại!" }]}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <Select placeholder="Loại tiêu chuẩn">
+                          <Select.Option value="TCVN">
+                            TCVN — Tiêu chuẩn quốc gia
+                          </Select.Option>
+                          <Select.Option value="QCVN">
+                            QCVN — Quy chuẩn kỹ thuật quốc gia
+                          </Select.Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "StandardCode"]}
+                        rules={[
+                          { required: true, message: "Nhập mã tiêu chuẩn!" },
+                        ]}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <Input placeholder="Ví dụ: QCVN 8-1:2011/BYT" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={8}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, "Description"]}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <Input placeholder="Mô tả ngắn (tùy chọn)" />
+                      </Form.Item>
+                    </Col>
+                    <Col span={2}>
+                      <MinusCircleOutlined
+                        style={{
+                          color: "#ff4d4f",
+                          fontSize: 16,
+                          cursor: "pointer",
+                        }}
+                        onClick={() => remove(name)}
+                      />
+                    </Col>
+                  </Row>
+                ))}
+                <Form.Item style={{ marginBottom: 8 }}>
+                  <Button
+                    type="dashed"
+                    onClick={() =>
+                      add({
+                        StandardType: undefined,
+                        StandardCode: "",
+                        Description: "",
+                      })
+                    }
+                    icon={<PlusOutlined />}
+                    block
+                  >
+                    Thêm tiêu chuẩn áp dụng
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+
           <Form.Item
             name="fileUpload"
-            label="Tài liệu đính kèm (PDF)"
+            label="Tài liệu đính kèm"
             valuePropName="fileList"
             getValueFromEvent={(e) => {
               if (Array.isArray(e)) {
@@ -1554,14 +2044,14 @@ export const HscbList: React.FC = () => {
 
           <Form.Item
             name="itemCodes"
-            label="Vật tư áp dụng (Chọn nhiều ItemCode)"
+            label="Item"
             rules={[
-              { required: true, message: "Vui lòng chọn ít nhất một vật tư!" },
+              { required: true, message: "Vui lòng chọn ít nhất một Item!" },
             ]}
           >
             <Select
               mode="multiple"
-              placeholder="Chọn các ItemCode..."
+              placeholder="Chọn các Item..."
               allowClear
               showSearch
               filterOption={(input, option) =>
@@ -1576,27 +2066,40 @@ export const HscbList: React.FC = () => {
             />
           </Form.Item>
 
-          <Divider
-            orientation={"left" as any}
-            style={{ margin: "24px 0 16px 0" }}
+          <div
+            style={{
+              fontWeight: 600,
+              fontSize: "13px",
+              marginTop: "24px",
+              marginBottom: "16px",
+              color: PRIMARY_COLOR,
+              display: "flex",
+              alignItems: "center",
+              borderBottom: "1px solid #f0f0f0",
+              paddingBottom: "6px",
+            }}
           >
-            Thông tin Số đơn Sở hữu trí tuệ liên kết (SHTT)
-          </Divider>
+            <span
+              style={{
+                width: "4px",
+                height: "12px",
+                background: PRIMARY_COLOR,
+                marginRight: "6px",
+                display: "inline-block",
+                borderRadius: "2px",
+              }}
+            ></span>
+            Thông tin Số đơn Sở hữu trí tuệ liên kết
+          </div>
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item
-                name="primaryBrandCode"
-                label="Số đơn chính (Nhãn chính)"
-              >
+              <Form.Item name="primaryBrandCode" label="Số đơn chính">
                 <Input placeholder="Số đơn nhãn chính..." allowClear />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item
-                name="secondaryBrandCode"
-                label="Số đơn phụ (Nhãn phụ)"
-              >
+              <Form.Item name="secondaryBrandCode" label="Số đơn phụ">
                 <Input placeholder="Số đơn nhãn phụ..." allowClear />
               </Form.Item>
             </Col>
@@ -1622,7 +2125,7 @@ export const HscbList: React.FC = () => {
                   }}
                 >
                   <span style={{ fontWeight: 500, color: "#595959" }}>
-                    Số đơn bổ sung (Nhãn phụ / Kiểu dáng CN)
+                    Số đơn bổ sung
                   </span>
                   <Button
                     type="dashed"
@@ -1684,6 +2187,82 @@ export const HscbList: React.FC = () => {
               </>
             )}
           </Form.List>
+
+          <Divider
+            orientation={"left" as any}
+            style={{ margin: "24px 0 16px 0" }}
+          >
+            Hình ảnh sản phẩm
+          </Divider>
+
+          <Row gutter={16} justify="start" style={{ marginBottom: "20px" }}>
+            <Col span={8}>
+              <div
+                style={{
+                  height: "120px",
+                  background: "#f0f0f0",
+                  borderRadius: "8px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px dashed #d9d9d9",
+                  color: "#8c8c8c",
+                }}
+              >
+                <PictureOutlined
+                  style={{ fontSize: "28px", marginBottom: "8px" }}
+                />
+                <span style={{ fontSize: "12px", fontWeight: 500 }}>
+                  Ảnh mặt trước
+                </span>
+              </div>
+            </Col>
+            <Col span={8}>
+              <div
+                style={{
+                  height: "120px",
+                  background: "#f0f0f0",
+                  borderRadius: "8px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px dashed #d9d9d9",
+                  color: "#8c8c8c",
+                }}
+              >
+                <PictureOutlined
+                  style={{ fontSize: "28px", marginBottom: "8px" }}
+                />
+                <span style={{ fontSize: "12px", fontWeight: 500 }}>
+                  Ảnh mặt sau / Nhãn phụ
+                </span>
+              </div>
+            </Col>
+            <Col span={8}>
+              <div
+                style={{
+                  height: "120px",
+                  background: "#f0f0f0",
+                  borderRadius: "8px",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "1px dashed #d9d9d9",
+                  color: "#8c8c8c",
+                }}
+              >
+                <PictureOutlined
+                  style={{ fontSize: "28px", marginBottom: "8px" }}
+                />
+                <span style={{ fontSize: "12px", fontWeight: 500 }}>
+                  Ảnh bao bì đóng gói
+                </span>
+              </div>
+            </Col>
+          </Row>
         </Form>
       </Modal>
 
@@ -1721,7 +2300,7 @@ export const HscbList: React.FC = () => {
             Đóng
           </Button>,
         ]}
-        width={1000}
+        width={1200}
       >
         {selectedDetailHscb && (
           <div style={{ marginTop: "15px" }}>
@@ -1731,8 +2310,11 @@ export const HscbList: React.FC = () => {
               column={2}
               style={{ marginBottom: "20px" }}
             >
-              <Descriptions.Item label="Mã Hồ Sơ" span={2}>
+              <Descriptions.Item label="Mã Hồ Sơ">
                 <strong>{selectedDetailHscb.HscbCode}</strong>
+              </Descriptions.Item>
+              <Descriptions.Item label="Tên sản phẩm công bố">
+                <strong>{selectedDetailHscb.LegalProductName || "-"}</strong>
               </Descriptions.Item>
               <Descriptions.Item label="ID Hệ thống">
                 {selectedDetailHscb.HscbId}
@@ -1769,6 +2351,81 @@ export const HscbList: React.FC = () => {
                   </span>
                 )}
               </Descriptions.Item>
+              <Descriptions.Item label="Thương nhân công bố" span={2}>
+                {(() => {
+                  const facility = facilities.find(
+                    (f) =>
+                      f.FacilityId === selectedDetailHscb.declaringFacilityId,
+                  );
+                  if (!facility) return <span style={{ color: "#999" }}>Chưa chọn</span>;
+                  const gpkd = facility.Licenses?.find(
+                    (l) => l.LicenseType === "GPKD"
+                  );
+                  const gpkdSuffix = gpkd ? ` (GPKD: ${gpkd.LicenseNo})` : "";
+                  return (
+                    <strong>
+                      {facility.FacilityCode} - {facility.FacilityName}{gpkdSuffix}
+                    </strong>
+                  );
+                })()}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sản xuất tại" span={2}>
+                {(() => {
+                  const factoryIds =
+                    selectedDetailHscb.producingFacilityIds || [];
+                  const matchedFactories = facilities.filter((f) =>
+                    factoryIds.includes(f.FacilityId),
+                  );
+                  if (matchedFactories.length === 0) {
+                    return <span style={{ color: "#999" }}>Chưa chọn</span>;
+                  }
+                  return (
+                    <Table
+                      size="small"
+                      dataSource={matchedFactories}
+                      rowKey="FacilityId"
+                      pagination={false}
+                      bordered
+                      columns={[
+                        {
+                          title: "Mã nhà máy",
+                          dataIndex: "FacilityCode",
+                          key: "FacilityCode",
+                          width: 150,
+                          render: (code) => (
+                            <strong style={{ color: PRIMARY_COLOR }}>
+                              {code}
+                            </strong>
+                          ),
+                        },
+                        {
+                          title: "Tên nhà máy",
+                          dataIndex: "FacilityName",
+                          key: "FacilityName",
+                        },
+                        {
+                          title: "Giấy ATTP của Nhà Máy",
+                          key: "attpLicense",
+                          width: 250,
+                          render: (_, record) => {
+                            const attp = record.Licenses?.find(
+                              (l) => l.LicenseType === "ATVSTP",
+                            );
+                            return attp ? (
+                              <Tag color="blue">{attp.LicenseNo}</Tag>
+                            ) : (
+                              <span style={{ color: "#999" }}>
+                                Chưa cập nhật GP
+                              </span>
+                            );
+                          },
+                        },
+                      ]}
+                      style={{ marginTop: "4px" }}
+                    />
+                  );
+                })()}
+              </Descriptions.Item>
             </Descriptions>
 
             <Divider
@@ -1786,8 +2443,8 @@ export const HscbList: React.FC = () => {
               </div>
             ) : (
               <Collapse
-                defaultActiveKey={[detailVersions[0]?.HscbVersionId]}
-                accordion
+                key={selectedDetailHscb.HscbId}
+                defaultActiveKey={detailVersions.map((v) => v.HscbVersionId)}
                 style={{ background: "#ffffff", border: "none" }}
               >
                 {detailVersions.map((version) => {
@@ -1907,6 +2564,12 @@ export const HscbList: React.FC = () => {
                               Đang hiệu lực/Vô thời hạn
                             </span>
                           )}
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Số giấy ATTP (Trên HSCB)">
+                          <strong>{version.AttpCode || "-"}</strong>
+                        </Descriptions.Item>
+                        <Descriptions.Item label="Mã kiểm soát AW">
+                          <strong>{version.ArtworkCode || "-"}</strong>
                         </Descriptions.Item>
                       </Descriptions>
 
@@ -2037,6 +2700,80 @@ export const HscbList: React.FC = () => {
                         )}
                       </div>
 
+                      {/* Tiêu chuẩn áp dụng (TCVN / QCVN) */}
+                      <div style={{ marginBottom: "16px" }}>
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            fontSize: "13px",
+                            marginBottom: "8px",
+                            color: PRIMARY_COLOR,
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "4px",
+                              height: "12px",
+                              background: PRIMARY_COLOR,
+                              marginRight: "6px",
+                              display: "inline-block",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          Tiêu chuẩn / Quy chuẩn áp dụng (TCVN / QCVN):
+                        </div>
+                        {version.AppliedStandards && version.AppliedStandards.length > 0 ? (
+                          <Table
+                            size="small"
+                            dataSource={version.AppliedStandards}
+                            rowKey="Id"
+                            pagination={false}
+                            bordered
+                            columns={[
+                              {
+                                title: "Loại tiêu chuẩn",
+                                dataIndex: "StandardType",
+                                key: "StandardType",
+                                width: 180,
+                                render: (type) => (
+                                  <Tag color={type === "TCVN" ? "cyan" : "geekblue"}>
+                                    {type === "TCVN" ? "TCVN — Tiêu chuẩn quốc gia" : "QCVN — Quy chuẩn kỹ thuật"}
+                                  </Tag>
+                                ),
+                              },
+                              {
+                                title: "Mã tiêu chuẩn / Quy chuẩn",
+                                dataIndex: "StandardCode",
+                                key: "StandardCode",
+                                width: 220,
+                                render: (code) => <strong style={{ color: PRIMARY_COLOR }}>{code}</strong>,
+                              },
+                              {
+                                title: "Mô tả / Tên tiêu chuẩn",
+                                dataIndex: "Description",
+                                key: "Description",
+                              },
+                            ]}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              padding: "8px",
+                              background: "#fafafa",
+                              border: "1px solid #f0f0f0",
+                              borderRadius: "4px",
+                              color: "#999",
+                              textAlign: "center",
+                              fontSize: "12px",
+                            }}
+                          >
+                            Không có tiêu chuẩn / quy chuẩn nào được gán
+                          </div>
+                        )}
+                      </div>
+
                       {/* Items list */}
                       <div>
                         <div
@@ -2157,11 +2894,252 @@ export const HscbList: React.FC = () => {
                           </div>
                         )}
                       </div>
+
+                      {/* Product Images Section */}
+                      <div
+                        style={{
+                          marginTop: "16px",
+                          borderTop: "1px solid #f0f0f0",
+                          paddingTop: "16px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            fontWeight: 600,
+                            fontSize: "13px",
+                            marginBottom: "8px",
+                            color: "#262626",
+                            display: "flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: "4px",
+                              height: "12px",
+                              background: PRIMARY_COLOR,
+                              marginRight: "6px",
+                              display: "inline-block",
+                              borderRadius: "2px",
+                            }}
+                          ></span>
+                          Hình ảnh sản phẩm minh họa:
+                        </div>
+                        <Row gutter={16} justify="start">
+                          <Col span={8}>
+                            <div
+                              style={{
+                                height: "100px",
+                                background: "#f5f5f5",
+                                borderRadius: "6px",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: "1px solid #d9d9d9",
+                                color: "#bfbfbf",
+                              }}
+                            >
+                              <PictureOutlined
+                                style={{
+                                  fontSize: "24px",
+                                  marginBottom: "4px",
+                                }}
+                              />
+                              <span style={{ fontSize: "11px" }}>
+                                Ảnh mặt trước
+                              </span>
+                            </div>
+                          </Col>
+                          <Col span={8}>
+                            <div
+                              style={{
+                                height: "100px",
+                                background: "#f5f5f5",
+                                borderRadius: "6px",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: "1px solid #d9d9d9",
+                                color: "#bfbfbf",
+                              }}
+                            >
+                              <PictureOutlined
+                                style={{
+                                  fontSize: "24px",
+                                  marginBottom: "4px",
+                                }}
+                              />
+                              <span style={{ fontSize: "11px" }}>
+                                Ảnh mặt sau / Nhãn phụ
+                              </span>
+                            </div>
+                          </Col>
+                          <Col span={8}>
+                            <div
+                              style={{
+                                height: "100px",
+                                background: "#f5f5f5",
+                                borderRadius: "6px",
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                border: "1px solid #d9d9d9",
+                                color: "#bfbfbf",
+                              }}
+                            >
+                              <PictureOutlined
+                                style={{
+                                  fontSize: "24px",
+                                  marginBottom: "4px",
+                                }}
+                              />
+                              <span style={{ fontSize: "11px" }}>
+                                Ảnh bao bì đóng gói
+                              </span>
+                            </div>
+                          </Col>
+                        </Row>
+                      </div>
                     </Collapse.Panel>
                   );
                 })}
               </Collapse>
             )}
+          </div>
+        )}
+      </Modal>
+
+      {/* 4.1. Revision History Modal */}
+      <Modal
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: PRIMARY_COLOR,
+            }}
+          >
+            <HistoryOutlined
+              style={{ fontSize: "18px", color: PRIMARY_COLOR }}
+            />
+            <span style={{ fontSize: "16px", fontWeight: "bold" }}>
+              Lịch sử Thay đổi & Phê duyệt - {selectedHistoryHscb?.HscbCode}
+            </span>
+          </div>
+        }
+        open={isHistoryModalVisible}
+        onCancel={() => {
+          setIsHistoryModalVisible(false);
+          setSelectedHistoryHscb(null);
+        }}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => {
+              setIsHistoryModalVisible(false);
+              setSelectedHistoryHscb(null);
+            }}
+          >
+            Đóng
+          </Button>,
+        ]}
+        width={1000}
+      >
+        {selectedHistoryHscb && (
+          <div style={{ marginTop: "15px" }}>
+            <Descriptions
+              bordered
+              size="small"
+              column={2}
+              style={{ marginBottom: "20px" }}
+            >
+              <Descriptions.Item label="Mã Hồ Sơ">
+                <strong>{selectedHistoryHscb.HscbCode}</strong>
+              </Descriptions.Item>
+              <Descriptions.Item label="Sản phẩm công bố">
+                <strong>{selectedHistoryHscb.LegalProductName || "-"}</strong>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider
+              orientation={"left" as any}
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color: PRIMARY_COLOR,
+              }}
+            >
+              Nhật ký thay đổi chi tiết
+            </Divider>
+
+            <Table
+              dataSource={getMockHistoryData(selectedHistoryHscb)}
+              columns={[
+                {
+                  title: "Thời gian chỉnh",
+                  dataIndex: "time",
+                  key: "time",
+                  width: 150,
+                  render: (text: string) => (
+                    <span style={{ color: "#595959" }}>{text}</span>
+                  ),
+                },
+                {
+                  title: "Người chỉnh",
+                  dataIndex: "user",
+                  key: "user",
+                  width: 200,
+                  render: (text: string) => <strong>{text}</strong>,
+                },
+                {
+                  title: "Phân loại",
+                  dataIndex: "type",
+                  key: "type",
+                  width: 140,
+                  render: (text: string) => <Tag color="blue">{text}</Tag>,
+                },
+                {
+                  title: "Chỉnh sửa thông tin gì",
+                  dataIndex: "details",
+                  key: "details",
+                  render: (text: string) => (
+                    <span style={{ fontSize: "13px" }}>{text}</span>
+                  ),
+                },
+                {
+                  title: "Lịch sử phê duyệt",
+                  key: "status",
+                  width: 240,
+                  render: (record: any) => {
+                    if (record.status === "APPROVED") {
+                      return (
+                        <div>
+                          <Tag color="green" style={{ marginBottom: 4 }}>
+                            Đã phê duyệt
+                          </Tag>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Bởi: <strong>{record.approver}</strong>
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Lúc: {record.approveTime}
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return <Tag color="gold">Chờ phê duyệt</Tag>;
+                    }
+                  },
+                },
+              ]}
+              pagination={false}
+              bordered
+              size="middle"
+            />
           </div>
         )}
       </Modal>
@@ -2502,12 +3480,21 @@ export const HscbList: React.FC = () => {
                         <div>
                           - Tên sản phẩm:{" "}
                           <strong>
-                            {spec ? spec.SpecName : "Chưa liên kết"}
+                            {selectedHscbForPdf.LegalProductName ||
+                              (spec ? spec.SpecName : "Chưa liên kết")}
                           </strong>
                         </div>
                         <div>
                           - Tiêu chuẩn cơ sở áp dụng:{" "}
                           <strong>{spec ? spec.SpecCode : "N/A"}</strong>
+                        </div>
+                        <div>
+                          - Số giấy ATTP:{" "}
+                          <strong>{latestVersion?.AttpCode || "N/A"}</strong>
+                        </div>
+                        <div>
+                          - Mã kiểm soát AW (Artwork):{" "}
+                          <strong>{latestVersion?.ArtworkCode || "N/A"}</strong>
                         </div>
                         <div>
                           - Phiên bản hồ sơ:{" "}

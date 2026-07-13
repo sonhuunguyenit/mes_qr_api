@@ -18,6 +18,8 @@ import {
   Drawer,
   Alert,
   Collapse,
+  Table,
+  Progress,
 } from "antd";
 import { AppTable } from "../../../components";
 import {
@@ -34,6 +36,8 @@ import {
   MinusCircleOutlined,
   ReloadOutlined,
   MailOutlined,
+  HistoryOutlined,
+  SyncOutlined,
 } from "@ant-design/icons";
 import { useAppSelector, useAppDispatch } from "../../../store/hooks";
 import { addDoc, approveDoc, rejectDoc } from "../store/docSlice";
@@ -192,6 +196,8 @@ export const DocList: React.FC = () => {
   const [isAddModalVisible, setIsAddModalVisible] = useState(false);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
   const [selectedDetailDoc, setSelectedDetailDoc] = useState<Doc | null>(null);
+  const [selectedHistoryDoc, setSelectedHistoryDoc] = useState<Doc | null>(null);
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
   const [isMailModalVisible, setIsMailModalVisible] = useState(false);
   const [selectedMailDoc, setSelectedMailDoc] = useState<Doc | null>(null);
   const [mailForm] = Form.useForm();
@@ -201,6 +207,82 @@ export const DocList: React.FC = () => {
   const [isRequestModalVisible, setIsRequestModalVisible] = useState(false);
   const [requestForm] = Form.useForm();
   const [isSendingRequestMail, setIsSendingRequestMail] = useState(false);
+
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiProgress, setAiProgress] = useState(0);
+
+  const fillFakeInfo = (file: any) => {
+    const docNameWithoutExt =
+      file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
+
+    // Pick a random partner if not set
+    let partnerId = form.getFieldValue("PartnerId");
+    if (!partnerId && partners.length > 0) {
+      partnerId = partners[Math.floor(Math.random() * partners.length)].PartnerId;
+    }
+
+    // Get items mapped to this partner
+    const mappedItemCodes = partnerMappings
+      .filter((m) => m.PartnerId === partnerId)
+      .map((m) => m.ItemCode);
+    const availableItems = items.filter(
+      (item) =>
+        mappedItemCodes.includes(item.ItemCode) &&
+        (item.ItemType === "RM" || item.ItemType === "PG")
+    );
+
+    // Pick 1-2 random items
+    const randomItems = [...availableItems]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, Math.floor(Math.random() * 2) + 1);
+    const selectedItemCodes = randomItems.map((item) => item.ItemCode);
+
+    // Pick a random DocType that is not Excel (i.e. not DI_UNG or DINH_DUONG) if not set or empty
+    let docTypes = form.getFieldValue("DocTypes") || [];
+    if (docTypes.length === 0) {
+      const allowedTypes = Object.values(DocType).filter(
+        (t) => t !== DocType.DI_UNG && t !== DocType.DINH_DUONG
+      );
+      docTypes = [allowedTypes[Math.floor(Math.random() * allowedTypes.length)]];
+    }
+
+    const docTypeSuffix = docTypes[0] || "COA";
+    const generatedDocCode = `${docTypeSuffix}-NCC-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    form.setFieldsValue({
+      DocTypes: docTypes,
+      PartnerId: partnerId,
+      ItemCodes: selectedItemCodes,
+      DocCode: generatedDocCode,
+      DocName: `Chứng từ ${docTypeSuffix} - ${docNameWithoutExt}`,
+      ValidFrom: dayjs(),
+      ValidTo: dayjs().add(1, "year"),
+    });
+
+    message.success(
+      "Đã phân rã thông tin tài liệu PDF và tự động điền thành công!",
+    );
+  };
+
+  const handleAiParsing = (file: any) => {
+    setIsAiLoading(true);
+    setAiProgress(0);
+
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 5;
+      if (progress >= 100) {
+        setAiProgress(100);
+        clearInterval(interval);
+        setTimeout(() => {
+          setIsAiLoading(false);
+          fillFakeInfo(file);
+        }, 400);
+      } else {
+        setAiProgress(progress);
+      }
+    }, 100);
+  };
 
   const requestPartnerId = Form.useWatch("PartnerId", requestForm);
   const requestDocTypes = Form.useWatch("DocTypes", requestForm) || [];
@@ -272,6 +354,52 @@ Bộ phận QA - Masan Consumer`;
       }
     }
     return { text: "Đang hiệu lực", color: "green", status: "ACTIVE" };
+  };
+
+  const getMockDocHistoryData = (record: Doc) => {
+    const partner = partners.find((p) => p.PartnerId === record.PartnerId);
+    const partnerName = partner ? partner.PartnerName : "N/A";
+    
+    return [
+      {
+        key: "1",
+        time: record.ValidFrom 
+          ? dayjs(record.ValidFrom).subtract(4, "day").format("YYYY-MM-DD HH:mm") 
+          : "2026-07-05 10:00",
+        user: partnerName + " (Nhân viên tải lên)",
+        type: "Khởi tạo chứng từ",
+        details: `Nhà cung cấp đăng tải chứng từ mới: ${record.DocName} (Phiên bản v${record.Version}). Mã chứng từ: ${record.DocCode}.`,
+        status: "APPROVED",
+        approver: "Hồ Hoàng Long (QA Officer)",
+        approveTime: record.ValidFrom 
+          ? dayjs(record.ValidFrom).subtract(4, "day").add(6, "hour").format("YYYY-MM-DD HH:mm") 
+          : "2026-07-05 16:00",
+      },
+      {
+        key: "2",
+        time: record.ValidFrom 
+          ? dayjs(record.ValidFrom).subtract(1, "day").format("YYYY-MM-DD HH:mm") 
+          : "2026-07-08 09:30",
+        user: "Hồ Hoàng Long (QA Officer)",
+        type: "Yêu cầu rà soát",
+        details: `Yêu cầu đối tác bổ sung/cập nhật thông tin các mã vật tư liên kết: ${record.DocItems?.map((di) => di.ItemCode).join(", ") || "N/A"}.`,
+        status: "APPROVED",
+        approver: "Trần Quốc Bảo (QA Manager)",
+        approveTime: record.ValidFrom 
+          ? dayjs(record.ValidFrom).subtract(1, "day").add(3, "hour").format("YYYY-MM-DD HH:mm") 
+          : "2026-07-08 12:30",
+      },
+      {
+        key: "3",
+        time: dayjs().subtract(1, "day").format("YYYY-MM-DD HH:mm"),
+        user: partnerName + " (Nhân viên tải lên)",
+        type: "Tải lên bản cập nhật",
+        details: `Tải lên file tài liệu đính kèm mới thay thế do điều chỉnh ngày hết hạn: ${record.ValidTo ? formatDate(record.ValidTo) : "Vô thời hạn"}.`,
+        status: "PENDING",
+        approver: "-",
+        approveTime: "-",
+      }
+    ];
   };
 
   // Helper: Map DocType to Badge details
@@ -737,7 +865,7 @@ Bộ phận QA - Masan Consumer`;
     {
       title: "Hành động",
       key: "Actions",
-      width: 150,
+      width: 200,
       fixed: "right" as any,
       align: "center" as const,
       render: (record: Doc) => (
@@ -757,6 +885,19 @@ Bộ phận QA - Masan Consumer`;
               type="default"
               icon={<MailOutlined style={{ fontSize: "16px", color: PRIMARY_COLOR }} />}
               onClick={() => handleOpenMailModal(record)}
+            />
+          </Tooltip>
+          <Tooltip title="Lịch sử thay đổi">
+            <Button
+              icon={
+                <HistoryOutlined
+                  style={{ fontSize: "16px", color: PRIMARY_COLOR }}
+                />
+              }
+              onClick={() => {
+                setSelectedHistoryDoc(record);
+                setIsHistoryModalVisible(true);
+              }}
             />
           </Tooltip>
         </Space>
@@ -975,6 +1116,47 @@ Bộ phận QA - Masan Consumer`;
         size="middle"
       />
 
+      {/* AI Loading Modal */}
+      <Modal
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: PRIMARY_COLOR,
+            }}
+          >
+            <SyncOutlined
+              spin
+              style={{ fontSize: "18px", color: PRIMARY_COLOR }}
+            />
+            <span style={{ fontSize: "16px", fontWeight: "bold" }}>
+              AI Extracting: Đang phân rã thông tin
+            </span>
+          </div>
+        }
+        open={isAiLoading}
+        footer={null}
+        closable={false}
+        centered
+        maskClosable={false}
+        width={400}
+        zIndex={1100}
+      >
+        <div style={{ textAlign: "center", padding: "20px 0" }}>
+          <Progress
+            type="line"
+            percent={aiProgress}
+            strokeColor={PRIMARY_COLOR}
+            status="active"
+          />
+          <div style={{ marginTop: "16px", color: "#666", fontSize: "14px" }}>
+            Hệ thống đang trích xuất dữ liệu từ file PDF bằng AI...
+          </div>
+        </div>
+      </Modal>
+
       {/* Add Document Modal */}
       <Modal
         title={
@@ -1186,7 +1368,12 @@ Bộ phận QA - Masan Consumer`;
                   <Upload.Dragger
                     name="files"
                     accept={isExcelUpload ? ".xlsx,.xls" : ".pdf"}
-                    beforeUpload={() => false}
+                    beforeUpload={(file) => {
+                      if (!isExcelUpload) {
+                        handleAiParsing(file);
+                      }
+                      return false;
+                    }}
                     maxCount={1}
                     showUploadList={false}
                     onChange={(info) => {
@@ -1241,42 +1428,95 @@ Bộ phận QA - Masan Consumer`;
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "space-between",
-                          background: isExcel ? "#f6ffed" : "#e6f7ff",
-                          border: isExcel
-                            ? "1px solid #b7eb8f"
-                            : "1px solid #91d5ff",
-                          borderRadius: "6px",
+                          background: "#fafafa",
+                          border: "1px solid #e8e8e8",
+                          borderRadius: "8px",
                           padding: "12px 16px",
                           marginBottom: "24px",
-                          minHeight: "56px",
+                          minHeight: "64px",
                         }}
                       >
-                        <Space style={{ flex: 1, overflow: "hidden" }}>
-                          {isExcel ? (
-                            <FileExcelOutlined
-                              style={{ color: "#52c41a", fontSize: "20px" }}
-                            />
-                          ) : (
-                            <FilePdfOutlined
-                              style={{ color: "#ff4d4f", fontSize: "20px" }}
-                            />
-                          )}
-                          <span
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "12px",
+                            flex: 1,
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
                             style={{
-                              fontWeight: 500,
-                              color: isExcel ? "#237804" : "#0050b3",
-                              fontSize: "14px",
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: "36px",
+                              height: "36px",
+                              background: "#ffffff",
+                              borderRadius: "6px",
+                              border: "1px solid #d9d9d9",
+                              flexShrink: 0,
                             }}
                           >
-                            {file.name}
-                          </span>
-                        </Space>
+                            {isExcel ? (
+                              <FileExcelOutlined
+                                style={{ color: "#52c41a", fontSize: "20px" }}
+                              />
+                            ) : (
+                              <FilePdfOutlined
+                                style={{ color: "#ff4d4f", fontSize: "20px" }}
+                              />
+                            )}
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              overflow: "hidden",
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontWeight: 500,
+                                color: "#262626",
+                                fontSize: "14px",
+                                lineHeight: "1.4",
+                                whiteSpace: "nowrap",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                              }}
+                              title={file.name}
+                            >
+                              {file.name}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                color: "#8c8c8c",
+                                marginTop: "2px",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "4px",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  display: "inline-block",
+                                  width: "5px",
+                                  height: "5px",
+                                  borderRadius: "50%",
+                                  backgroundColor: "#52c41a",
+                                }}
+                              />
+                              {isExcel
+                                ? "Đã phân tích dữ liệu Excel thành công"
+                                : "Trích xuất dữ liệu bằng AI thành công"}
+                            </span>
+                          </div>
+                        </div>
                         <Space size="middle">
                           <Button
-                            type="link"
+                            type="default"
                             icon={<EyeOutlined />}
                             onClick={() => {
                               if (isExcel) {
@@ -1292,22 +1532,33 @@ Bộ phận QA - Masan Consumer`;
                               }
                             }}
                             style={{
-                              color: isExcel ? "#389e0d" : "#096dd9",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              color: PRIMARY_COLOR,
+                              borderColor: PRIMARY_COLOR,
                               fontWeight: 500,
+                              fontSize: "13px",
+                              borderRadius: "6px",
                             }}
                           >
                             Xem file
                           </Button>
                           <Button
-                            type="link"
+                            type="default"
                             danger
                             icon={<MinusCircleOutlined />}
                             onClick={() => {
                               form.setFieldsValue({ fileUpload: [] });
                             }}
-                            style={{ fontWeight: 500 }}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              fontWeight: 500,
+                              fontSize: "13px",
+                              borderRadius: "6px",
+                            }}
                           >
-                            Xóa file
+                            {isExcel ? "Xóa" : "Xóa file"}
                           </Button>
                         </Space>
                       </div>
@@ -1513,6 +1764,123 @@ Bộ phận QA - Masan Consumer`;
               </div>
             );
           })()}
+      </Modal>
+
+      {/* 4.1. Supplier Doc Revision History Modal */}
+      <Modal
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: PRIMARY_COLOR,
+            }}
+          >
+            <HistoryOutlined style={{ fontSize: "18px", color: PRIMARY_COLOR }} />
+            <span style={{ fontSize: "16px", fontWeight: "bold" }}>
+              Lịch sử Thay đổi & Phê duyệt - {selectedHistoryDoc?.DocCode}
+            </span>
+          </div>
+        }
+        open={isHistoryModalVisible}
+        onCancel={() => {
+          setIsHistoryModalVisible(false);
+          setSelectedHistoryDoc(null);
+        }}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => {
+              setIsHistoryModalVisible(false);
+              setSelectedHistoryDoc(null);
+            }}
+          >
+            Đóng
+          </Button>,
+        ]}
+        width={1000}
+      >
+        {selectedHistoryDoc && (
+          <div style={{ marginTop: "15px" }}>
+            <Descriptions
+              bordered
+              size="small"
+              column={2}
+              style={{ marginBottom: "20px" }}
+            >
+              <Descriptions.Item label="Mã Chứng Từ">
+                <strong>{selectedHistoryDoc.DocCode}</strong>
+              </Descriptions.Item>
+              <Descriptions.Item label="Tên chứng từ">
+                <strong>{selectedHistoryDoc.DocName || "-"}</strong>
+              </Descriptions.Item>
+            </Descriptions>
+            
+            <Divider orientation={"left" as any} style={{ fontSize: "14px", fontWeight: 600, color: PRIMARY_COLOR }}>
+              Nhật ký thay đổi chi tiết
+            </Divider>
+
+            <Table
+              dataSource={getMockDocHistoryData(selectedHistoryDoc)}
+              columns={[
+                {
+                  title: "Thời gian chỉnh",
+                  dataIndex: "time",
+                  key: "time",
+                  width: 150,
+                  render: (text: string) => <span style={{ color: "#595959" }}>{text}</span>,
+                },
+                {
+                  title: "Người chỉnh",
+                  dataIndex: "user",
+                  key: "user",
+                  width: 200,
+                  render: (text: string) => <strong>{text}</strong>,
+                },
+                {
+                  title: "Phân loại",
+                  dataIndex: "type",
+                  key: "type",
+                  width: 140,
+                  render: (text: string) => <Tag color="blue">{text}</Tag>,
+                },
+                {
+                  title: "Chỉnh sửa thông tin gì",
+                  dataIndex: "details",
+                  key: "details",
+                  render: (text: string) => <span style={{ fontSize: "13px" }}>{text}</span>,
+                },
+                {
+                  title: "Lịch sử phê duyệt",
+                  key: "status",
+                  width: 240,
+                  render: (record: any) => {
+                    if (record.status === "APPROVED") {
+                      return (
+                        <div>
+                          <Tag color="green" style={{ marginBottom: 4 }}>Đã phê duyệt</Tag>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Bởi: <strong>{record.approver}</strong>
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Lúc: {record.approveTime}
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return <Tag color="gold">Chờ phê duyệt</Tag>;
+                    }
+                  },
+                },
+              ]}
+              pagination={false}
+              bordered
+              size="middle"
+            />
+          </div>
+        )}
       </Modal>
 
       {/* Send Expiring Warning Mail Modal */}

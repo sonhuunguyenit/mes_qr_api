@@ -25,6 +25,7 @@ import {
   CheckCircleOutlined,
   EditOutlined,
   FileExcelOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 
 const CustomBarcodeIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -54,6 +55,7 @@ import { addBarcode, updateBarcode } from "../store/barcodeSlice";
 import { Barcode, Barcode_Item } from "../types";
 import { ItemType, ItemTypeConfig } from "../../../enums";
 import { PRIMARY_COLOR } from "../../../contants";
+import { mockBarcodeVersions } from "../../../local-data/barcode-version";
 
 export const BarcodeList: React.FC = () => {
   const barcodes = useAppSelector((state) => state.barcode.barcodes);
@@ -86,6 +88,10 @@ export const BarcodeList: React.FC = () => {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingBarcode, setEditingBarcode] = useState<Barcode | null>(null);
   const [editForm] = Form.useForm();
+
+  // History Modal states
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
+  const [historyBarcode, setHistoryBarcode] = useState<Barcode | null>(null);
 
   const handleSearch = () => {
     setFilterBarcodeNumber(tempBarcodeNumber);
@@ -326,7 +332,7 @@ export const BarcodeList: React.FC = () => {
       key: "action",
       align: "center" as const,
       fixed: "right" as const,
-      width: 140,
+      width: 170,
       render: (record: Barcode) => (
         <Space size="small">
           <Tooltip title="Chi tiết">
@@ -348,6 +354,20 @@ export const BarcodeList: React.FC = () => {
                 />
               }
               onClick={() => handleOpenEditModal(record)}
+            />
+          </Tooltip>
+          <Tooltip title="Lịch sử thay đổi">
+            <Button
+              type="default"
+              icon={
+                <HistoryOutlined
+                  style={{ fontSize: "16px", color: PRIMARY_COLOR }}
+                />
+              }
+              onClick={() => {
+                setHistoryBarcode(record);
+                setIsHistoryModalVisible(true);
+              }}
             />
           </Tooltip>
         </Space>
@@ -850,7 +870,9 @@ export const BarcodeList: React.FC = () => {
               color: PRIMARY_COLOR,
             }}
           >
-            <EditOutlined style={{ color: PRIMARY_COLOR, marginRight: "8px" }} />
+            <EditOutlined
+              style={{ color: PRIMARY_COLOR, marginRight: "8px" }}
+            />
             Cập nhật Mã vạch GS1
           </span>
         }
@@ -965,6 +987,152 @@ export const BarcodeList: React.FC = () => {
             </Col>
           </Row>
         </Form>
+      </Modal>
+
+      {/* History Modal */}
+      <Modal
+        title={
+          <span
+            style={{
+              fontSize: "17px",
+              fontWeight: "bold",
+              color: PRIMARY_COLOR,
+            }}
+          >
+            <HistoryOutlined style={{ marginRight: "8px" }} />
+            Lịch sử phiên bản: {historyBarcode?.BarcodeNumber} (
+            {historyBarcode?.BarcodeId})
+          </span>
+        }
+        open={isHistoryModalVisible}
+        onCancel={() => {
+          setIsHistoryModalVisible(false);
+          setHistoryBarcode(null);
+        }}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => {
+              setIsHistoryModalVisible(false);
+              setHistoryBarcode(null);
+            }}
+          >
+            Đóng
+          </Button>,
+        ]}
+        width={900}
+      >
+        {historyBarcode && (
+          <div style={{ marginTop: "15px" }}>
+            {(() => {
+              const versions = mockBarcodeVersions.filter(
+                (v) => v.BarcodeId === historyBarcode.BarcodeId,
+              );
+
+              if (versions.length === 0) {
+                return (
+                  <div
+                    style={{
+                      textAlign: "center",
+                      color: "#8c8c8c",
+                      padding: "20px",
+                    }}
+                  >
+                    Chưa ghi nhận thông tin lịch sử phiên bản nào cho mã vạch
+                    này.
+                  </div>
+                );
+              }
+
+              const sorted = [...versions].sort(
+                (a, b) => b.Version - a.Version,
+              );
+
+              return (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "24px",
+                  }}
+                >
+                  {sorted.map((v) => {
+                    const isCurrent =
+                      v.BarcodeNumber === historyBarcode.BarcodeNumber;
+                    return (
+                      <div
+                        key={v.BarcodeVersionId}
+                        style={{
+                          border: "1px solid #d9d9d9",
+                          borderRadius: "8px",
+                          padding: "16px",
+                          background: "#fafafa",
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "12px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              fontSize: "15px",
+                              fontWeight: "bold",
+                              color: PRIMARY_COLOR,
+                            }}
+                          >
+                            Phiên bản v{v.Version}
+                          </span>
+                          <Tag color={isCurrent ? "success" : "default"}>
+                            {isCurrent ? "Hiện tại" : "Cũ"}
+                          </Tag>
+                        </div>
+                        <Descriptions
+                          bordered
+                          size="small"
+                          column={2}
+                          style={{ background: "#ffffff" }}
+                        >
+                          <Descriptions.Item label="Số Barcode GS1">
+                            <strong
+                              style={{
+                                fontFamily: "Courier, monospace",
+                                fontSize: 14,
+                              }}
+                            >
+                              {v.BarcodeNumber}
+                            </strong>
+                          </Descriptions.Item>
+                          <Descriptions.Item label="Tiêu chuẩn áp dụng">
+                            <Tag color="purple">{v.SpecId}</Tag>
+                          </Descriptions.Item>
+                          <Descriptions.Item label="Vật tư áp dụng" span={2}>
+                            {v.ItemCodes.join(", ")}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="Mô tả thay đổi" span={2}>
+                            {v.ChangeDescription}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="Hiệu lực" span={2}>
+                            {v.ValidFrom}{" "}
+                            {v.ValidTo ? `đến ${v.ValidTo}` : "đến nay"}
+                          </Descriptions.Item>
+                          <Descriptions.Item label="Cập nhật bởi" span={2}>
+                            {v.ModifiedBy} vào lúc {v.ModifiedAt}
+                          </Descriptions.Item>
+                        </Descriptions>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </Modal>
     </div>
   );

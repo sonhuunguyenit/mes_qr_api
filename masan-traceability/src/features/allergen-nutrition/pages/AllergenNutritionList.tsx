@@ -13,6 +13,8 @@ import {
   Drawer,
   Collapse,
   message,
+  Table,
+  Modal,
 } from "antd";
 import { AppTable } from "../../../components";
 import {
@@ -23,7 +25,9 @@ import {
   EyeOutlined,
   MenuUnfoldOutlined,
   ReloadOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
+import dayjs from "dayjs";
 import { TemplateUploadModal } from "../components/TemplateUploadModal";
 import {
   allergenTemplateData,
@@ -123,6 +127,34 @@ export const AllergenNutritionList: React.FC = () => {
   const [selectedDetailTemplate, setSelectedDetailTemplate] =
     useState<TemplateItem | null>(null);
 
+  const [selectedHistoryTemplate, setSelectedHistoryTemplate] = useState<TemplateItem | null>(null);
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
+
+  const getMockTemplateHistoryData = (record: TemplateItem) => {
+    return [
+      {
+        key: "1",
+        time: "2026-07-01 10:00",
+        user: "Nguyễn Thị Mai (QA Specialist)",
+        type: "Khởi tạo Template",
+        details: `Đăng tải tệp Excel mẫu cấu hình và khai báo cấu trúc thuộc tính cho template "${record.name}". Gán tọa độ ô dòng cột ban đầu.`,
+        status: "APPROVED",
+        approver: "Hồ Hoàng Long (QA Officer)",
+        approveTime: "2026-07-01 14:00",
+      },
+      {
+        key: "2",
+        time: "2026-07-08 11:30",
+        user: "Nguyễn Thị Mai (QA Specialist)",
+        type: "Điều chỉnh cấu trúc",
+        details: `Cập nhật bổ sung chỉ tiêu thuộc tính Excel, thay đổi cell coordinate từ cột C sang cột D để đồng bộ với định dạng báo cáo mới.`,
+        status: record.status,
+        approver: record.status === DocStatus.APPROVED ? "Hồ Hoàng Long (QA Officer)" : "-",
+        approveTime: record.status === DocStatus.APPROVED ? "2026-07-08 15:45" : "-",
+      }
+    ];
+  };
+
   // Filter Logic
   const filteredTemplates = templates.filter((tpl) => {
     const matchesCode = !filterCode || tpl.code.toLowerCase().includes(filterCode.toLowerCase().trim());
@@ -166,14 +198,6 @@ export const AllergenNutritionList: React.FC = () => {
       dataIndex: "unit",
       key: "unit",
       render: (unit: string) => <Tag color="default">{unit}</Tag>,
-    },
-    {
-      title: "Giá trị mặc định",
-      dataIndex: "value",
-      key: "value",
-      render: (val: string) => (
-        <strong style={{ color: "#096dd9" }}>{val}</strong>
-      ),
     },
     {
       title: "Tọa độ ô Excel",
@@ -247,7 +271,7 @@ export const AllergenNutritionList: React.FC = () => {
     {
       title: "Hành động",
       key: "Actions",
-      width: 120,
+      width: 160,
       align: "center" as const,
       fixed: "right" as const,
       render: (record: TemplateItem) => (
@@ -262,11 +286,24 @@ export const AllergenNutritionList: React.FC = () => {
               }}
             />
           </Tooltip>
+          <Tooltip title="Lịch sử thay đổi">
+            <Button
+              icon={
+                <HistoryOutlined
+                  style={{ fontSize: "16px", color: PRIMARY_COLOR }}
+                />
+              }
+              onClick={() => {
+                setSelectedHistoryTemplate(record);
+                setIsHistoryModalVisible(true);
+              }}
+            />
+          </Tooltip>
           <a href={record.fileUrl} target="_blank" rel="noopener noreferrer">
             <Tooltip title="Tải file mẫu Excel">
               <Button
-                type="text"
-                style={{ color: "#52c41a" }}
+                type="primary"
+                style={{ backgroundColor: "#107c41", borderColor: "#107c41" }}
                 icon={<FileExcelOutlined style={{ fontSize: "16px" }} />}
               />
             </Tooltip>
@@ -355,8 +392,8 @@ export const AllergenNutritionList: React.FC = () => {
                 style={{ width: "100%" }}
               >
                 <Select.Option value="ALL">Tất cả loại</Select.Option>
-                <Select.Option value="DI_UNG">Template Dị ứng</Select.Option>
-                <Select.Option value="DINH_DUONG">Template Dinh dưỡng</Select.Option>
+                <Select.Option value="DI_UNG">Cảnh báo dị ứng</Select.Option>
+                <Select.Option value="DINH_DUONG">Thông tin dinh dưỡng</Select.Option>
               </Select>
             </Col>
 
@@ -507,9 +544,9 @@ export const AllergenNutritionList: React.FC = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Phân Loại">
                 {selectedDetailTemplate.type === "DI_UNG" ? (
-                  <Tag color="purple">Cảnh báo dị ứng (DI_UNG)</Tag>
+                  <Tag color="purple">Cảnh báo dị ứng</Tag>
                 ) : (
-                  <Tag color="magenta">Thông tin dinh dưỡng (DINH_DUONG)</Tag>
+                  <Tag color="magenta">Thông tin dinh dưỡng</Tag>
                 )}
               </Descriptions.Item>
               <Descriptions.Item label="Số lượng chỉ tiêu">
@@ -562,6 +599,125 @@ export const AllergenNutritionList: React.FC = () => {
         open={isTemplateModalVisible}
         onCancel={() => setIsTemplateModalVisible(false)}
       />
+
+      {/* Template Revision History Modal */}
+      <Modal
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: PRIMARY_COLOR,
+            }}
+          >
+            <HistoryOutlined style={{ fontSize: "18px", color: PRIMARY_COLOR }} />
+            <span style={{ fontSize: "16px", fontWeight: "bold" }}>
+              Lịch sử Cấu trúc & Phê duyệt Template - {selectedHistoryTemplate?.code}
+            </span>
+          </div>
+        }
+        open={isHistoryModalVisible}
+        onCancel={() => {
+          setIsHistoryModalVisible(false);
+          setSelectedHistoryTemplate(null);
+        }}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => {
+              setIsHistoryModalVisible(false);
+              setSelectedHistoryTemplate(null);
+            }}
+          >
+            Đóng
+          </Button>,
+        ]}
+        width={1000}
+      >
+        {selectedHistoryTemplate && (
+          <div style={{ marginTop: "15px" }}>
+            <Descriptions
+              bordered
+              size="small"
+              column={2}
+              style={{ marginBottom: "20px" }}
+            >
+              <Descriptions.Item label="Mã Template">
+                <strong>{selectedHistoryTemplate.code}</strong>
+              </Descriptions.Item>
+              <Descriptions.Item label="Tên Template">
+                <strong>{selectedHistoryTemplate.name || "-"}</strong>
+              </Descriptions.Item>
+            </Descriptions>
+            
+            <Divider orientation={"left" as any} style={{ fontSize: "14px", fontWeight: 600, color: PRIMARY_COLOR }}>
+              Nhật ký thay đổi cấu hình Excel coordinate mapping
+            </Divider>
+
+            <Table
+              dataSource={getMockTemplateHistoryData(selectedHistoryTemplate)}
+              columns={[
+                {
+                  title: "Thời gian chỉnh",
+                  dataIndex: "time",
+                  key: "time",
+                  width: 150,
+                  render: (text: string) => <span style={{ color: "#595959" }}>{text}</span>,
+                },
+                {
+                  title: "Người thực hiện",
+                  dataIndex: "user",
+                  key: "user",
+                  width: 220,
+                  render: (text: string) => <strong>{text}</strong>,
+                },
+                {
+                  title: "Phân loại",
+                  dataIndex: "type",
+                  key: "type",
+                  width: 150,
+                  render: (text: string) => <Tag color="blue">{text}</Tag>,
+                },
+                {
+                  title: "Nội dung thay đổi",
+                  dataIndex: "details",
+                  key: "details",
+                  render: (text: string) => <span style={{ fontSize: "13px" }}>{text}</span>,
+                },
+                {
+                  title: "Lịch sử phê duyệt",
+                  key: "status",
+                  width: 240,
+                  render: (record: any) => {
+                    if (record.status === DocStatus.APPROVED) {
+                      return (
+                        <div>
+                          <Tag color="green" style={{ marginBottom: 4 }}>Đã phê duyệt</Tag>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Bởi: <strong>{record.approver}</strong>
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Lúc: {record.approveTime}
+                          </div>
+                        </div>
+                      );
+                    } else if (record.status === DocStatus.REJECTED) {
+                      return <Tag color="error">Từ chối phê duyệt</Tag>;
+                    } else {
+                      return <Tag color="gold">Chờ phê duyệt</Tag>;
+                    }
+                  },
+                },
+              ]}
+              pagination={false}
+              bordered
+              size="middle"
+            />
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

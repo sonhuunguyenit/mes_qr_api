@@ -3,6 +3,7 @@ import {
   SearchOutlined,
   ReloadOutlined,
   FileExcelOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import {
   Alert,
@@ -20,8 +21,10 @@ import {
   Tag,
   Tooltip,
   message,
+  Divider,
 } from "antd";
 import React, { useEffect, useState } from "react";
+import dayjs from "dayjs";
 import { useAppDispatch, useAppSelector } from "../../../store/hooks";
 import { BomTable } from "../components";
 import { updateBomLine, updateParentHscb } from "../store/bomSlice";
@@ -46,6 +49,64 @@ export const BomList: React.FC = () => {
   const [hscbFilter, setHscbFilter] = useState("");
   const [selectedBom, setSelectedBom] = useState<Bom | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const [selectedHistoryBom, setSelectedHistoryBom] = useState<Bom | null>(
+    null,
+  );
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
+
+  const getMockBomHistoryData = (record: Bom) => {
+    return [
+      {
+        key: "1",
+        time: record.ValidFrom
+          ? dayjs(record.ValidFrom)
+              .subtract(5, "day")
+              .format("YYYY-MM-DD HH:mm")
+          : "2026-07-02 09:00",
+        user: "Trần Minh Hoàng (BOM Architect)",
+        type: "Khởi tạo BOM",
+        details: `Tạo mới cấu trúc sản phẩm BOM ID: ${record.BomId} cho sản phẩm ${record.ItemCode}. Thiết lập định mức NVL/Bao bì ban đầu.`,
+        status: "APPROVED",
+        approver: "Lê Hoàng Nam (QA Manager)",
+        approveTime: record.ValidFrom
+          ? dayjs(record.ValidFrom)
+              .subtract(5, "day")
+              .add(8, "hour")
+              .format("YYYY-MM-DD HH:mm")
+          : "2026-07-02 17:00",
+      },
+      {
+        key: "2",
+        time: record.ValidFrom
+          ? dayjs(record.ValidFrom)
+              .subtract(1, "day")
+              .format("YYYY-MM-DD HH:mm")
+          : "2026-07-06 14:20",
+        user: "Trần Minh Hoàng (BOM Architect)",
+        type: "Điều chỉnh liên kết",
+        details: `Cập nhật gán tiêu chuẩn kỹ thuật (Spec) cho các line nguyên vật liệu cấu thành. Gán HSCB phiên bản hiện hành: ${record.Selected_HscbVersionId || "N/A"}.`,
+        status: "APPROVED",
+        approver: "Lê Hoàng Nam (QA Manager)",
+        approveTime: record.ValidFrom
+          ? dayjs(record.ValidFrom)
+              .subtract(1, "day")
+              .add(2, "hour")
+              .format("YYYY-MM-DD HH:mm")
+          : "2026-07-06 16:20",
+      },
+      {
+        key: "3",
+        time: dayjs().subtract(8, "hour").format("YYYY-MM-DD HH:mm"),
+        user: "Phạm Tấn Tài (QA Specialist)",
+        type: "Cập nhật định mức",
+        details: `Đề xuất điều chỉnh tỷ lệ hao hụt nguyên liệu bột gia vị do thay đổi spec máy trộn.`,
+        status: "PENDING",
+        approver: "-",
+        approveTime: "-",
+      },
+    ];
+  };
 
   const handleSearch = () => {
     setBomIdFilter(tempBomId);
@@ -629,6 +690,10 @@ export const BomList: React.FC = () => {
           setIsModalVisible(true);
           setEditedLines({});
         }}
+        onViewHistory={(record) => {
+          setSelectedHistoryBom(record);
+          setIsHistoryModalVisible(true);
+        }}
       />
 
       {/* 3. Detail Collapse Modal */}
@@ -641,7 +706,7 @@ export const BomList: React.FC = () => {
               color: PRIMARY_COLOR,
             }}
           >
-            Cấu Trúc BOM
+            Điều Chỉnh Cấu Trúc BOM
           </span>
         }
         open={isModalVisible}
@@ -663,11 +728,158 @@ export const BomList: React.FC = () => {
         width="95%"
       >
         {activeSelectedBom && (
-          <Collapse
-            defaultActiveKey={["parent", "children"]}
-            items={collapseItems}
-            style={{ marginTop: "15px" }}
-          />
+          <>
+            {Number(activeSelectedBom.ErpVersion || 1) !== Number(activeSelectedBom.Version || 1) && (
+              <Alert
+                message={
+                  <strong>
+                    ⚠️ Phiên bản mới từ ERP chưa đồng bộ (v{activeSelectedBom.ErpVersion})
+                  </strong>
+                }
+                type="warning"
+                showIcon
+                closable={false}
+                style={{ marginBottom: "16px" }}
+              />
+            )}
+            <Collapse
+              defaultActiveKey={["parent", "children"]}
+              items={collapseItems}
+              style={{ marginTop: "15px" }}
+            />
+          </>
+        )}
+      </Modal>
+
+      {/* BOM Revision History Modal */}
+      <Modal
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: PRIMARY_COLOR,
+            }}
+          >
+            <HistoryOutlined
+              style={{ fontSize: "18px", color: PRIMARY_COLOR }}
+            />
+            <span style={{ fontSize: "16px", fontWeight: "bold" }}>
+              Lịch sử Thay đổi & Phê duyệt BOM - {selectedHistoryBom?.BomId}
+            </span>
+          </div>
+        }
+        open={isHistoryModalVisible}
+        onCancel={() => {
+          setIsHistoryModalVisible(false);
+          setSelectedHistoryBom(null);
+        }}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => {
+              setIsHistoryModalVisible(false);
+              setSelectedHistoryBom(null);
+            }}
+          >
+            Đóng
+          </Button>,
+        ]}
+        width={1000}
+      >
+        {selectedHistoryBom && (
+          <div style={{ marginTop: "15px" }}>
+            <Descriptions
+              bordered
+              size="small"
+              column={2}
+              style={{ marginBottom: "20px" }}
+            >
+              <Descriptions.Item label="Mã BOM">
+                <strong>{selectedHistoryBom.BomId}</strong>
+              </Descriptions.Item>
+              <Descriptions.Item label="Mã Sản Phẩm">
+                <strong>{selectedHistoryBom.ItemCode || "-"}</strong>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider
+              orientation={"left" as any}
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color: PRIMARY_COLOR,
+              }}
+            >
+              Nhật ký thay đổi cấu trúc định mức BOM
+            </Divider>
+
+            <Table
+              dataSource={getMockBomHistoryData(selectedHistoryBom)}
+              columns={[
+                {
+                  title: "Thời gian chỉnh",
+                  dataIndex: "time",
+                  key: "time",
+                  width: 150,
+                  render: (text: string) => (
+                    <span style={{ color: "#595959" }}>{text}</span>
+                  ),
+                },
+                {
+                  title: "Người thực hiện",
+                  dataIndex: "user",
+                  key: "user",
+                  width: 220,
+                  render: (text: string) => <strong>{text}</strong>,
+                },
+                {
+                  title: "Phân loại",
+                  dataIndex: "type",
+                  key: "type",
+                  width: 140,
+                  render: (text: string) => <Tag color="blue">{text}</Tag>,
+                },
+                {
+                  title: "Chi tiết thay đổi",
+                  dataIndex: "details",
+                  key: "details",
+                  render: (text: string) => (
+                    <span style={{ fontSize: "13px" }}>{text}</span>
+                  ),
+                },
+                {
+                  title: "Lịch sử phê duyệt",
+                  key: "status",
+                  width: 240,
+                  render: (record: any) => {
+                    if (record.status === "APPROVED") {
+                      return (
+                        <div>
+                          <Tag color="green" style={{ marginBottom: 4 }}>
+                            Đã phê duyệt
+                          </Tag>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Bởi: <strong>{record.approver}</strong>
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Lúc: {record.approveTime}
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return <Tag color="gold">Chờ phê duyệt</Tag>;
+                    }
+                  },
+                },
+              ]}
+              pagination={false}
+              bordered
+              size="middle"
+            />
+          </div>
         )}
       </Modal>
     </div>

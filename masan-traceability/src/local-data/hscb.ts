@@ -6,6 +6,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-001",
     HscbCode: "HSCB-FG001",
     SpecId: "SPEC-FG001-V1",
+    LegalProductName: "Nước tương Chinsu Tỏi Ớt 250ml",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-002", "FAC-003"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-001",
@@ -15,6 +18,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: "2026-05-31",
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0019A",
+        ArtworkCode: "AW-2026-NNDN-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-001",
@@ -32,6 +37,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-06-01",
         ValidTo: null,
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0019A",
+        ArtworkCode: "AW-2026-NNDN-V2",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-001-V2",
@@ -46,6 +53,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-002",
     HscbCode: "HSCB-FG002",
     SpecId: "SPEC-FG002-V1",
+    LegalProductName: "Mì khoai tây Omachi xốt bò hầm",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-002"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-002",
@@ -55,6 +65,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-02-01",
         ValidTo: "2026-06-30",
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0428B",
+        ArtworkCode: "AW-2026-OMC-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-002",
@@ -71,6 +83,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-07-01",
         ValidTo: null,
         Status: DocStatus.PENDING,
+        AttpCode: "ATTP-2026-0428B",
+        ArtworkCode: "AW-2026-OMC-V2",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-002-V2",
@@ -85,6 +99,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-003",
     HscbCode: "HSCB-FG003",
     SpecId: "SPEC-FG003-V1",
+    LegalProductName: "Nước mắm Nam Ngư Đệ Nhị 900ml",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-002"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-003",
@@ -94,6 +111,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: null,
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0035C",
+        ArtworkCode: "AW-2026-CS-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-003",
@@ -108,6 +127,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-004",
     HscbCode: "HSCB-FG004",
     SpecId: "SPEC-FG004-V1",
+    LegalProductName: "Tương ớt Chinsu Siêu Cay 250g",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-002", "FAC-003"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-004",
@@ -117,6 +139,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: "2026-04-30",
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0042D",
+        ArtworkCode: "AW-2026-CS-TO-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-004",
@@ -134,6 +158,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-05-01",
         ValidTo: null,
         Status: DocStatus.REJECTED,
+        AttpCode: "ATTP-2026-0042D",
+        ArtworkCode: "AW-2026-CS-TO-V2",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-004-V2",
@@ -148,6 +174,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-005",
     HscbCode: "HSCB-FG005",
     SpecId: "SPEC-FG005-V1",
+    LegalProductName: "Mì Kokomi Đại 90g",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-002"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-005",
@@ -157,6 +186,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: null,
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0058E",
+        ArtworkCode: "AW-2026-CSHN-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-005",
@@ -171,6 +202,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-006",
     HscbCode: "HSCB-FG006",
     SpecId: "SPEC-FG006-V1",
+    LegalProductName: "Nước khoáng thiên nhiên Vĩnh Hảo",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-003"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-006",
@@ -180,6 +214,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: null,
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0062F",
+        ArtworkCode: "AW-2026-VH-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-006",
@@ -194,6 +230,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-007",
     HscbCode: "HSCB-FG007",
     SpecId: "SPEC-FG007-V1",
+    LegalProductName: "Tương cà Chinsu Thơm Ngọt 250g",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-002"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-007",
@@ -203,6 +242,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: null,
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0071G",
+        ArtworkCode: "AW-2026-CP-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-007",
@@ -217,6 +258,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-008",
     HscbCode: "HSCB-FG008",
     SpecId: "SPEC-FG008-V1",
+    LegalProductName: "Mì Kokomi Xốt Cay 90g",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-002"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-008",
@@ -226,6 +270,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: null,
         Status: DocStatus.PENDING,
+        AttpCode: "ATTP-2026-0083H",
+        ArtworkCode: "AW-2026-PN-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-008",
@@ -240,6 +286,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-009",
     HscbCode: "HSCB-FG009",
     SpecId: "SPEC-FG009-V1",
+    LegalProductName: "Nước mắm Nam Ngư Nhãn Vàng 650ml",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-003"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-009",
@@ -249,6 +298,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: null,
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0094I",
+        ArtworkCode: "AW-2026-MT-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-009",
@@ -263,6 +314,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-010",
     HscbCode: "HSCB-FG010",
     SpecId: "SPEC-FG010-V1",
+    LegalProductName: "Cháo Sen Bát Bảo Minh Trung 365g",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-002"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-010",
@@ -272,6 +326,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: null,
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0102J",
+        ArtworkCode: "AW-2026-MS-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-010",
@@ -286,6 +342,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-011",
     HscbCode: "HSCB-FG011",
     SpecId: "SPEC-FG011-V1",
+    LegalProductName: "Hạt Nêm Chinsu Ngọt Tôm Thơm Thịt 400g",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-002"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-011",
@@ -295,6 +354,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: null,
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0115K",
+        ArtworkCode: "AW-2026-CSXU-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-011",
@@ -309,6 +370,9 @@ export const mockHscbs: Hscb[] = [
     HscbId: "HSCB-012",
     HscbCode: "HSCB-FG012",
     SpecId: "SPEC-FG012-V1",
+    LegalProductName: "Nước Tăng Lực Compact Hoa Anh Đào 330ml",
+    declaringFacilityId: "FAC-001",
+    producingFacilityIds: ["FAC-002"],
     HscbVersions: [
       {
         HscbVersionId: "HSCB-VERSION-012",
@@ -318,6 +382,8 @@ export const mockHscbs: Hscb[] = [
         ValidFrom: "2026-01-01",
         ValidTo: null,
         Status: DocStatus.APPROVED,
+        AttpCode: "ATTP-2026-0127L",
+        ArtworkCode: "AW-2026-WU-V1",
         HscbItems: [
           {
             HscbItemId: "HSCB-ITEM-012",

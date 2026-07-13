@@ -4,6 +4,7 @@ import {
   MenuUnfoldOutlined,
   ReloadOutlined,
   SearchOutlined,
+  HistoryOutlined,
 } from "@ant-design/icons";
 import {
   Badge,
@@ -20,8 +21,10 @@ import {
   Space,
   Tag,
   Tooltip,
+  Table,
 } from "antd";
 import React, { useState } from "react";
+import dayjs from "dayjs";
 import { AppTable } from "../../../components";
 import { PRIMARY_COLOR } from "../../../contants";
 import { useAppSelector } from "../../../store/hooks";
@@ -69,6 +72,45 @@ export const PartnerList: React.FC = () => {
   };
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
+  const [isHistoryModalVisible, setIsHistoryModalVisible] = useState(false);
+
+  const getMockPartnerHistoryData = (record: any) => {
+    const itemName = record.ItemName || "Vật tư";
+    return [
+      {
+        key: "1",
+        time: "2026-07-01 09:00",
+        user: "Trần Anh Dũng (QA Specialist)",
+        type: "Liên kết NCC",
+        details: `Cấu hình phân công Nhà cung cấp mới cho vật tư "${record.ItemCode} - ${itemName}". Phê duyệt hồ sơ đánh giá NCC ban đầu.`,
+        status: "APPROVED",
+        approver: "Trần Quốc Bảo (QA Manager)",
+        approveTime: "2026-07-01 15:30",
+      },
+      {
+        key: "2",
+        time: "2026-07-08 14:15",
+        user: "Trần Anh Dũng (QA Specialist)",
+        type: "Liên kết NSX",
+        details: `Phân công thêm Nhà sản xuất mới cho vật tư. Cập nhật trạng thái chuỗi cung ứng vật tư RM/PG.`,
+        status: "APPROVED",
+        approver: "Trần Quốc Bảo (QA Manager)",
+        approveTime: "2026-07-08 16:30",
+      },
+      {
+        key: "3",
+        time: dayjs().subtract(1, "day").format("YYYY-MM-DD HH:mm"),
+        user: "Lê Văn Tám (Procurement Officer)",
+        type: "Thay đổi trạng thái",
+        details: `Đề xuất điều chỉnh liên kết nhà cung cấp do thay đổi sản lượng hợp đồng mua hàng.`,
+        status: "PENDING",
+        approver: "-",
+        approveTime: "-",
+      }
+    ];
+  };
 
   // Nested table filter states (in Details Modal)
   const [nestedSearchCode, setNestedSearchCode] = useState("");
@@ -233,20 +275,35 @@ export const PartnerList: React.FC = () => {
     {
       title: "Hành động",
       key: "action",
-      width: 120,
+      width: 150,
       align: "center" as const,
       fixed: "right" as const,
       render: (_: any, record: any) => (
-        <Tooltip title="Chi tiết">
-          <Button
-            type="primary"
-            icon={<EyeOutlined style={{ fontSize: "16px" }} />}
-            onClick={() => {
-              setSelectedItem(record);
-              setIsModalVisible(true);
-            }}
-          />
-        </Tooltip>
+        <Space size="middle">
+          <Tooltip title="Chi tiết">
+            <Button
+              type="primary"
+              icon={<EyeOutlined style={{ fontSize: "16px" }} />}
+              onClick={() => {
+                setSelectedItem(record);
+                setIsModalVisible(true);
+              }}
+            />
+          </Tooltip>
+          <Tooltip title="Lịch sử thay đổi">
+            <Button
+              icon={
+                <HistoryOutlined
+                  style={{ fontSize: "16px", color: PRIMARY_COLOR }}
+                />
+              }
+              onClick={() => {
+                setSelectedHistoryItem(record);
+                setIsHistoryModalVisible(true);
+              }}
+            />
+          </Tooltip>
+        </Space>
       ),
     },
   ];
@@ -760,6 +817,123 @@ export const PartnerList: React.FC = () => {
               </div>
             );
           })()}
+      </Modal>
+
+      {/* Partner Revision History Modal */}
+      <Modal
+        title={
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              color: PRIMARY_COLOR,
+            }}
+          >
+            <HistoryOutlined style={{ fontSize: "18px", color: PRIMARY_COLOR }} />
+            <span style={{ fontSize: "16px", fontWeight: "bold" }}>
+              Lịch sử Phân công & Đánh giá Đối tác - {selectedHistoryItem?.ItemCode}
+            </span>
+          </div>
+        }
+        open={isHistoryModalVisible}
+        onCancel={() => {
+          setIsHistoryModalVisible(false);
+          setSelectedHistoryItem(null);
+        }}
+        footer={[
+          <Button
+            key="close"
+            type="primary"
+            onClick={() => {
+              setIsHistoryModalVisible(false);
+              setSelectedHistoryItem(null);
+            }}
+          >
+            Đóng
+          </Button>,
+        ]}
+        width={1000}
+      >
+        {selectedHistoryItem && (
+          <div style={{ marginTop: "15px" }}>
+            <Descriptions
+              bordered
+              size="small"
+              column={2}
+              style={{ marginBottom: "20px" }}
+            >
+              <Descriptions.Item label="Mã Vật Tư">
+                <strong>{selectedHistoryItem.ItemCode}</strong>
+              </Descriptions.Item>
+              <Descriptions.Item label="Tên Vật Tư / Sản Phẩm">
+                <strong>{selectedHistoryItem.ItemName || "-"}</strong>
+              </Descriptions.Item>
+            </Descriptions>
+            
+            <Divider orientation={"left" as any} style={{ fontSize: "14px", fontWeight: 600, color: PRIMARY_COLOR }}>
+              Nhật ký thay đổi phân công đối tác
+            </Divider>
+
+            <Table
+              dataSource={getMockPartnerHistoryData(selectedHistoryItem)}
+              columns={[
+                {
+                  title: "Thời gian chỉnh",
+                  dataIndex: "time",
+                  key: "time",
+                  width: 150,
+                  render: (text: string) => <span style={{ color: "#595959" }}>{text}</span>,
+                },
+                {
+                  title: "Người thực hiện",
+                  dataIndex: "user",
+                  key: "user",
+                  width: 220,
+                  render: (text: string) => <strong>{text}</strong>,
+                },
+                {
+                  title: "Phân loại",
+                  dataIndex: "type",
+                  key: "type",
+                  width: 140,
+                  render: (text: string) => <Tag color="blue">{text}</Tag>,
+                },
+                {
+                  title: "Chi tiết thay đổi",
+                  dataIndex: "details",
+                  key: "details",
+                  render: (text: string) => <span style={{ fontSize: "13px" }}>{text}</span>,
+                },
+                {
+                  title: "Lịch sử phê duyệt",
+                  key: "status",
+                  width: 240,
+                  render: (record: any) => {
+                    if (record.status === "APPROVED") {
+                      return (
+                        <div>
+                          <Tag color="green" style={{ marginBottom: 4 }}>Đã phê duyệt</Tag>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Bởi: <strong>{record.approver}</strong>
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#8c8c8c" }}>
+                            Lúc: {record.approveTime}
+                          </div>
+                        </div>
+                      );
+                    } else {
+                      return <Tag color="gold">Chờ phê duyệt</Tag>;
+                    }
+                  },
+                },
+              ]}
+              pagination={false}
+              bordered
+              size="middle"
+            />
+          </div>
+        )}
       </Modal>
     </div>
   );

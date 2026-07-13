@@ -30,7 +30,7 @@ export const TemplateUploadModal: React.FC<TemplateUploadModalProps> = ({
   const handleFinish = (values: any) => {
     message.success(
       `Đã lưu cấu hình Template ${
-        values.templateType === "DI_UNG" ? "Dị ứng" : "Dinh dưỡng"
+        values.templateType === "DI_UNG" ? "Cảnh báo dị ứng" : "Thông tin dinh dưỡng"
       } thành công vào cơ sở dữ liệu!`
     );
     setIsDrawerOpen(false);
@@ -74,14 +74,6 @@ export const TemplateUploadModal: React.FC<TemplateUploadModalProps> = ({
       render: (unit: string) => <Tag color="default">{unit}</Tag>,
     },
     {
-      title: "Giá trị mặc định",
-      dataIndex: "value",
-      key: "value",
-      render: (val: string) => (
-        <strong style={{ color: "#096dd9" }}>{val}</strong>
-      ),
-    },
-    {
       title: "Tọa độ ô Excel",
       dataIndex: "cell",
       key: "cell",
@@ -120,9 +112,9 @@ export const TemplateUploadModal: React.FC<TemplateUploadModalProps> = ({
             ]}
           >
             <Select placeholder="Chọn loại template...">
-              <Select.Option value="DI_UNG">Template Dị ứng</Select.Option>
+              <Select.Option value="DI_UNG">Cảnh báo dị ứng</Select.Option>
               <Select.Option value="DINH_DUONG">
-                Template Dinh dưỡng
+                Thông tin dinh dưỡng
               </Select.Option>
             </Select>
           </Form.Item>
@@ -214,7 +206,7 @@ export const TemplateUploadModal: React.FC<TemplateUploadModalProps> = ({
               style={{ color: "#52c41a", marginRight: "8px" }}
             />
             Đọc File Excel: Template{" "}
-            {selectedTemplateType === "DI_UNG" ? "Dị ứng" : "Dinh dưỡng"} (Gốc)
+            {selectedTemplateType === "DI_UNG" ? "Cảnh báo dị ứng" : "Thông tin dinh dưỡng"} (Gốc)
           </span>
         }
         placement="right"

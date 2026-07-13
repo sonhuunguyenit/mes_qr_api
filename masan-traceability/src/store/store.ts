@@ -8,6 +8,7 @@ import barcodeReducer from '../features/barcode/store/barcodeSlice';
 import docReducer from '../features/doc/store/docSlice';
 import partnerReducer from '../features/partner/store/partnerSlice';
 import recallReducer from '../features/recall/store/recallSlice';
+import facilityReducer from '../features/facility/store/facilitySlice';
 
 export const store = configureStore({
   reducer: {
@@ -19,7 +20,8 @@ export const store = configureStore({
     barcode: barcodeReducer,
     doc: docReducer,
     partner: partnerReducer,
-    recall: recallReducer
+    recall: recallReducer,
+    facility: facilityReducer
   }
 });
 
